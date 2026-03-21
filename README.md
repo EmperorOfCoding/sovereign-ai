@@ -21,7 +21,7 @@
 
 ## 📂 Project Structure
 
-```
+```text
 sovereign-ai/
 ├── app/
 │   ├── frontend/           # Next.js App Router (Frontend)
@@ -114,7 +114,7 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 ## 📞 Contact
 
-For questions or support, please contact [your-email@example.com](mailto:[EMAIL_ADDRESS]).
+For questions or support, please contact [suporte@sovereign-ai.com](mailto:suporte@sovereign-ai.com).
 
 ## 📄 Acknowledgments
 
