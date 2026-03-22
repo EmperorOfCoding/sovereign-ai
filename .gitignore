@@ -11,6 +11,7 @@ app/frontend/node_modules
 !.yarn/releases
 !.yarn/versions
 .agent/
+app/.agent/
 
 # testing
 coverage/

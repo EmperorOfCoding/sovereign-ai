@@ -113,6 +113,12 @@ To prevent VS Code (or other IDEs) from unnecessarily parsing and validating thi
 - **Landing Page Integration**: The main landing page is defined in `app/page.tsx`, functioning as a Client Component to manage scroll intersection reveal effects globally (`revealOnScroll`).
 - **Typography**: We use `Space Grotesk` customized inside the Next.js `layout.tsx` to prevent cumulative layout shift, leveraging `next/font/google`.
 
+### Recent Enhancements (March 2026)
+- **Advanced Interactive UI**: Implemented high-fidelity animations using `framer-motion`, including staggered text entries, 3D card tilts, and dynamic timeline visualizations.
+- **Enhanced Search Modal**: Redesigned the AI analysis modal with expanded width (`max-w-5xl`), improved typography for readability, and categorical data breakdown (Evidences, Indicators, AI Summary, Next Steps, Verdict).
+- **Interactive Roadmap**: Developed a scroll-reactive execution roadmap with visual timeline connections and staggered card reveals.
+- **Simplified Navigation**: Removed non-essential links (API, Documentation) and hidden the login system to focus on the core value proposition of the landing page.
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
