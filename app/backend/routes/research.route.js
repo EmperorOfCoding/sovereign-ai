@@ -39,6 +39,7 @@ router.post("/research", validateQuery, rateLimiter, async (req, res) => {
   } catch (err) {
     const clientIp = req.headers["x-forwarded-for"] || req.ip;
     console.error(`[/api/research] Request failed for query: "${req.validatedQuery}"`);
+    console.error(`- RequestID: ${req.id}`);
     console.error(`- IP: ${clientIp}`);
     console.error(`- Error: ${err.message}`);
     console.error(`- Stack: ${err.stack}`);

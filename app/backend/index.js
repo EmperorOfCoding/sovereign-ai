@@ -11,6 +11,13 @@ app.use(cors({ origin: FRONTEND_ORIGIN }));
 app.set("trust proxy", 1); // trust X-Forwarded-For from reverse proxies and tests
 app.use(express.json());
 
+// Request ID Middleware
+app.use((req, res, next) => {
+  req.id = req.headers["x-request-id"] || require("crypto").randomUUID();
+  res.setHeader("X-Request-Id", req.id);
+  next();
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Sovereign AI backend is running" });
 });
