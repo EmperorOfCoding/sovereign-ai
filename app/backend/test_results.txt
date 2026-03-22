@@ -1,0 +1,50 @@
+﻿
+> backend@1.0.0 test
+> node node_modules/jest/bin/jest.js --forceExit
+
+  console.log
+    [dotenv@17.3.1] injecting env (2) from .env -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    Server started on port 5000
+
+      at Server.log (index.js:21:11)
+
+  console.error
+    [/api/research] Error: OpenRouter error 503: Service Unavailable
+
+    [0m [90m 38 |[39m     [36mreturn[39m res[33m.[39mjson({ success[33m:[39m [36mtrue[39m[33m,[39m data })[33m;[39m
+     [90m 39 |[39m   } [36mcatch[39m (err) {
+    [31m[1m>[22m[39m[90m 40 |[39m     console[33m.[39merror([32m"[/api/research] Error:"[39m[33m,[39m err[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 41 |[39m     [36mreturn[39m res[33m.[39mstatus([35m500[39m)[33m.[39mjson({
+     [90m 42 |[39m       error[33m:[39m [32m"ANALYSIS_FAILED"[39m[33m,[39m
+     [90m 43 |[39m       message[33m:[39m [32m"Erro ao processar a an├ílise. Tente novamente."[39m[33m,[39m[0m
+
+      at error (routes/research.route.js:40:13)
+
+node.exe : PASS tests/research.test.js
+No linha:1 caractere:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS tests/research.test.js:String) [ 
+   ], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  POST /api/research
+    ÔêÜ 1. Valid query returns 200 with structured data (49 ms)
+    ÔêÜ 2. Empty query returns 400 validation error (15 ms)
+    ÔêÜ 3. Missing query field returns 400 (12 ms)
+    ÔêÜ 4. Query over 500 chars returns 400 (12 ms)
+    ÔêÜ 5. Rate limit: 4th request from same IP returns 429 (19 ms)
+    ÔêÜ 6. OpenRouter API failure returns 500 (17 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        0.945 s, estimated 1 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect 
+async operations that kept running after all tests finished?

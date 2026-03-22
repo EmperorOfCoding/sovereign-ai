@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { 
   Search, 
   CheckCircle2, 
@@ -41,6 +41,105 @@ const Navbar = () => (
   </nav>
 );
 
+/* ─────────────── Mouse Glow ─────────────── */
+const MouseGlow = () => {
+  const [mounted, setMounted] = useState(false);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const x = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const y = useSpring(mouseY, { stiffness: 50, damping: 20 });
+
+  useEffect(() => {
+    setMounted(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  if (!mounted) return null;
+
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '600px',
+        height: '600px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(51, 255, 0, 0.12) 0%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 40, // Above almost everything but below modals (z-50)
+        x,
+        y,
+        translateX: '-50%',
+        translateY: '-50%',
+      }}
+    />
+  );
+};
+
+
+
+
+/* ─────────────── Magnetic Button ─────────────── */
+type MagneticButtonProps = {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  strength?: number;
+};
+
+const MagneticButton = ({ children, className, strength = 0.3, onClick, type = 'button', disabled }: MagneticButtonProps) => {
+  const ref = useRef<HTMLButtonElement>(null);
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const x = useSpring(rawX, { stiffness: 150, damping: 15, mass: 0.1 });
+  const y = useSpring(rawY, { stiffness: 150, damping: 15, mass: 0.1 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distanceX = e.clientX - centerX;
+    const distanceY = e.clientY - centerY;
+    rawX.set(distanceX * strength);
+    rawY.set(distanceY * strength);
+  };
+
+  const handleMouseLeave = () => {
+    rawX.set(0);
+    rawY.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      style={{ x, y }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      type={type}
+      disabled={disabled}
+      className={className}
+      whileTap={{ scale: 0.96 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+    >
+      {children}
+    </motion.button>
+  );
+};
+
+
 /* ─────────────── Score Bar Component ─────────────── */
 const ScoreBar = ({ score, maxScore = 10, label, delay = 0 }: { score: number; maxScore?: number; label: string; delay?: number }) => {
   const percentage = (score / maxScore) * 100;
@@ -71,43 +170,70 @@ const ScoreBar = ({ score, maxScore = 10, label, delay = 0 }: { score: number; m
   );
 };
 
-/* ─────────────── Search Results Modal (Redesigned) ─────────────── */
+/* ─────────────── Types ─────────────── */
+type Evidence = { source: string; text: string };
+type AnalysisResult = {
+  evidences: Evidence[];
+  painScore: number;
+  aiSummaryScore: number;
+  paymentScore: number;
+  nextSteps: string[];
+  verdict: 'VÁLIDO' | 'INVÁLIDO';
+  verdictReason: string;
+};
+type ApiError = 'RATE_LIMIT_EXCEEDED' | 'ANALYSIS_FAILED' | null;
+
+/* ─────────────── Search Results Modal (Real API) ─────────────── */
 const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClose: () => void; query: string }) => {
   const [step, setStep] = useState(0);
   const [loadingText, setLoadingText] = useState('Cruzando bases de dados globais...');
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
+  const [apiError, setApiError] = useState<ApiError>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Simulated analysis results
-  const analysisResults = {
-    evidences: [
-      { source: 'Reddit /r/startup', text: '"Ninguém resolve o problema de integração de APIs de pagamento no Brasil de forma simples. Desisti de três ferramentas esse mês."', votes: 847 },
-      { source: 'Twitter / X', text: '"Cansado de ter que usar 5 planilhas pra gerir minha logística. Bem que podia ter uma IA que fizesse isso automático..."', likes: 2340 },
-      { source: 'Reclame Aqui', text: '"O suporte das grandes empresas de CRM não entende o pequeno empreendedor. Estamos abandonados."', reclamacoes: 156 },
-    ],
-    painScore: 8,
-    aiSummaryScore: 7,
-    paymentScore: 6,
-    nextSteps: [
-      'Entrevistar 10-15 empreendedores do setor logístico para validar a dor identificada',
-      'Refinar o problema: focar em "integração de APIs de pagamento para PMEs brasileiras"',
-      'Criar um protótipo de solução mínima e testar a disposição de pagamento (WTP)',
-      'Mapear concorrentes diretos e indiretos no mercado brasileiro'
-    ],
-    verdict: 'VÁLIDO' as const,
-    verdictReason: 'A dor identificada é forte (8/10), com evidências reais de múltiplas fontes. O indicador de pagamento é moderado (6/10), sugerindo que o público pagaria por uma solução, mas é sensível a preço. Recomendamos prosseguir com validação via entrevistas.'
-  };
-
   useEffect(() => {
-    if (isOpen) {
-      setStep(0);
-      setLoadingText('Cruzando bases de dados globais...');
-      const t1 = setTimeout(() => { setStep(1); setLoadingText('Analisando sinais de dor...'); }, 1500);
-      const t2 = setTimeout(() => { setStep(2); setLoadingText('Processando evidências...'); }, 3000);
-      const t3 = setTimeout(() => { setStep(3); setLoadingText('Calculando indicadores...'); }, 4500);
-      const t4 = setTimeout(() => setStep(4), 6000);
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+
+    // Reset state
+    setStep(0);
+    setAnalysisResults(null);
+    setApiError(null);
+    setLoadingText('Cruzando bases de dados globais...');
+
+    // Animate loading steps
+    const t1 = setTimeout(() => { setStep(1); setLoadingText('Analisando sinais de dor...'); }, 1500);
+    const t2 = setTimeout(() => { setStep(2); setLoadingText('Processando evidências...'); }, 3000);
+    const t3 = setTimeout(() => { setStep(3); setLoadingText('Calculando indicadores...'); }, 4500);
+
+    // Fetch from backend
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    fetch(`${backendUrl}/api/research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    })
+      .then(async (res) => {
+        const body = await res.json();
+        if (res.status === 429) {
+          setApiError('RATE_LIMIT_EXCEEDED');
+          setStep(4);
+          return;
+        }
+        if (!res.ok || !body.success) {
+          setApiError('ANALYSIS_FAILED');
+          setStep(4);
+          return;
+        }
+        setAnalysisResults(body.data);
+        setStep(4);
+      })
+      .catch(() => {
+        setApiError('ANALYSIS_FAILED');
+        setStep(4);
+      });
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [isOpen, query]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -177,8 +303,45 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
               </div>
             )}
 
+            {/* Error States */}
+            {!isLoading && apiError && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-8"
+              >
+                {apiError === 'RATE_LIMIT_EXCEEDED' ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+                    <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+                      <Clock size={36} className="text-yellow-500" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-yellow-500 mb-2">Limite Diário Atingido</p>
+                      <p className="text-zinc-400">Você usou todas as suas pesquisas de hoje. Volte amanhã para continuar validando suas ideias.</p>
+                    </div>
+                    <button onClick={onClose} className="mt-2 px-8 py-3 border border-white/10 rounded-xl text-zinc-400 hover:text-white hover:border-white/20 transition-all cursor-pointer text-sm font-bold uppercase tracking-widest">
+                      Entendido
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+                    <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20">
+                      <AlertCircle size={36} className="text-red-500" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-red-500 mb-2">Erro na Análise</p>
+                      <p className="text-zinc-400">Não foi possível processar sua pesquisa. Por favor, tente novamente em instantes.</p>
+                    </div>
+                    <button onClick={onClose} className="mt-2 px-8 py-3 border border-white/10 rounded-xl text-zinc-400 hover:text-white hover:border-white/20 transition-all cursor-pointer text-sm font-bold uppercase tracking-widest">
+                      Fechar
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* Results */}
-            {!isLoading && (
+            {!isLoading && !apiError && analysisResults && (
               <div ref={contentRef} className="p-8 space-y-10 overflow-y-auto max-h-[75vh] custom-scrollbar">
                 
                 {/* 1. Evidências Encontradas */}
@@ -278,13 +441,10 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary/30 group-hover:bg-primary transition-colors" />
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                      <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Relatório Executivo v1.02</span>
+                      <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Relatório Executivo — IA</span>
                     </div>
                     <p className="text-zinc-200 leading-relaxed font-medium">
-                      O problema de integração de APIs de pagamento para PMEs brasileiras é real e documentado em múltiplas
-                      plataformas. Existe uma frustração generalizada com as soluções existentes, especialmente entre small businesses 
-                      do setor de e-commerce e logística. O mercado demonstra sinais claros de disposição para adotar alternativas, 
-                      porém com sensibilidade a preço. O gap técnico principal está na simplificação da integração multi-gateway.
+                      {analysisResults.verdictReason}
                     </p>
                   </div>
                 </motion.div>
@@ -328,8 +488,21 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
                 {/* 5. Veredito */}
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.6 }}
+                  whileInView={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: [
+                      "0 0 0px rgba(51, 255, 0, 0)", 
+                      "0 0 40px rgba(51, 255, 0, 0.4)", 
+                      "0 0 15px rgba(51, 255, 0, 0.1)"
+                    ]
+                  }} 
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ 
+                    opacity: { duration: 0.5, delay: 0.6 },
+                    y: { duration: 0.5, delay: 0.6 },
+                    boxShadow: { duration: 1.5, delay: 0.8, times: [0, 0.3, 1] }
+                  }}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -339,7 +512,7 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
                   </div>
                   <div className={`p-8 rounded-2xl border-2 transition-all duration-500 ${
                     analysisResults.verdict === 'VÁLIDO' 
-                      ? 'border-primary/40 bg-primary/5 shadow-[0_0_30px_rgba(51,255,0,0.05)]' 
+                      ? 'border-primary/40 bg-primary/5 shadow-primary-subtle' 
                       : 'border-red-500/40 bg-red-500/5'
                   }`}>
                     <div className="flex items-center flex-wrap gap-4 mb-6">
@@ -462,16 +635,13 @@ const Hero = () => {
         Tome decisões inteligentes baseadas em dados reais
       </motion.p>
       
-      <motion.button 
-        initial={{ opacity: 0, y: 15 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 2.5, duration: 0.5 }}
+      <MagneticButton
         className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 mb-20 mx-auto cursor-pointer"
+        strength={0.4}
       >
         Começar Agora
         <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-      </motion.button>
+      </MagneticButton>
     </div>
 
     <motion.div 
@@ -505,10 +675,15 @@ const Hero = () => {
               className="w-full bg-transparent text-zinc-300 text-sm md:text-base outline-none px-4 placeholder:text-zinc-600 h-full font-mono flex-1"
             />
           </div>
-          <button type="submit" disabled={!query.trim()} className="shrink-0 flex items-center justify-center gap-3 px-6 h-12 bg-transparent hover:bg-primary transition-all duration-300 border border-white/15 hover:border-primary hover:shadow-[0_0_25px_rgba(51,255,0,0.3)] active:scale-[0.98] rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto mt-2 sm:mt-0 group">
+          <MagneticButton
+            type="submit"
+            disabled={!query.trim()}
+            strength={0.25}
+            className="shrink-0 flex items-center justify-center gap-3 px-6 h-12 bg-transparent hover:bg-primary transition-all duration-300 border border-white/15 hover:border-primary hover:shadow-[0_0_25px_rgba(51,255,0,0.3)] active:scale-[0.98] rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto mt-2 sm:mt-0 group"
+          >
             <div className="w-2 h-2 rounded-full bg-primary group-hover:bg-black group-hover:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-300" />
             <span className="text-xs text-primary group-hover:text-black uppercase font-bold tracking-widest mt-0.5 transition-colors duration-300">Deep Research</span>
-          </button>
+          </MagneticButton>
         </form>
         
         <div className="space-y-4 font-mono pl-0 sm:pl-[2.35rem]">
@@ -888,6 +1063,7 @@ export default function Home() {
   return (
     <div className="min-h-screen font-sans">
       <Navbar />
+      <MouseGlow />
       <main>
         <Hero />
         <ValidationArchitecture />

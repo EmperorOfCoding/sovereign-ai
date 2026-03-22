@@ -78,4 +78,50 @@
   .animate-fade-in-up {
     animation: fade-in-up 0.5s ease-out forwards;
   }
+
+  @keyframes shimmer-border {
+    0%   { box-shadow: 0 0 0rem rgba(51, 255, 0, 0); }
+    30%  { box-shadow: 0 0 4rem rgba(51, 255, 0, 0.6), 0 0 1.5rem rgba(51, 255, 0, 0.4); }
+    60%  { box-shadow: 0 0 2rem rgba(51, 255, 0, 0.3), 0 0 0.75rem rgba(51, 255, 0, 0.2); }
+    100% { box-shadow: 0 0 1rem rgba(51, 255, 0, 0.08), 0 0 2rem rgba(51, 255, 0, 0.04); }
+  }
+
+  .verdict-shimmer {
+    animation: shimmer-border 1.4s ease-out forwards;
+  }
+
+  .mouse-glow-container {
+    position: relative;
+  }
+
+  .mouse-glow-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(
+      40rem circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(51, 255, 0, 0.04) 0%,
+      transparent 65%
+    );
+    transition: opacity 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 0.25rem;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(51, 255, 0, 0.2);
+    border-radius: 9999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(51, 255, 0, 0.4);
+  }
 }
