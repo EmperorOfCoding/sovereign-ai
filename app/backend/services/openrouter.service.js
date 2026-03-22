@@ -11,7 +11,8 @@
  */
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "anthropic/claude-sonnet-4-5";
+const MODEL = "anthropic/claude-sonnet-4.5";
+const OPENROUTER_TIMEOUT_MS = 30000; // 30 seconds
 
 const SYSTEM_PROMPT = `You are a market research analyst. Respond ONLY with a valid JSON object — no markdown, no explanation.
 
@@ -40,39 +41,58 @@ async function analyzeMarket(query) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured");
 
-  const response = await fetch(OPENROUTER_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": process.env.FRONTEND_ORIGIN || "http://localhost:3000",
-      "X-Title": "Sovereign AI",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Analyze this market: "${query}"` },
-      ],
-      max_tokens: 700,
-      temperature: 0,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`OpenRouter error ${response.status}: ${errorBody}`);
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+        "X-Title": "Sovereign AI",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Analyze this market: "${query}"` },
+        ],
+        max_tokens: 700,
+        temperature: 0,
+      }),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`OpenRouter error ${response.status}: ${errorBody}`);
+    }
+
+    const json = await response.json();
+    const rawContent = json.choices?.[0]?.message?.content;
+
+    if (!rawContent) throw new Error("Empty response from OpenRouter");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawContent);
+    } catch (err) {
+      throw new Error(`Failed to parse AI response as JSON: ${err.message}. Raw content: ${rawContent}`);
+    }
+
+    validateResult(parsed);
+    return parsed;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error(`Request to OpenRouter timed out after ${OPENROUTER_TIMEOUT_MS}ms`);
+    }
+    throw err;
   }
-
-  const json = await response.json();
-  const rawContent = json.choices?.[0]?.message?.content;
-
-  if (!rawContent) throw new Error("Empty response from OpenRouter");
-
-  const parsed = JSON.parse(rawContent);
-  validateResult(parsed);
-
-  return parsed;
 }
 
 /**
@@ -80,10 +100,33 @@ async function analyzeMarket(query) {
  * @param {object} data
  */
 function validateResult(data) {
-  const required = ["evidences", "painScore", "aiSummaryScore", "paymentScore", "nextSteps", "verdict", "verdictReason"];
+  const required = [
+    "evidences",
+    "painScore",
+    "aiSummaryScore",
+    "paymentScore",
+    "nextSteps",
+    "verdict",
+    "verdictReason",
+  ];
   for (const key of required) {
     if (data[key] === undefined) throw new Error(`Missing field in AI response: ${key}`);
   }
+
+  // Number/Range validation
+  const scoresToValidate = [
+    { name: "painScore", value: data.painScore },
+    { name: "aiSummaryScore", value: data.aiSummaryScore },
+    { name: "paymentScore", value: data.paymentScore },
+  ];
+
+  for (const score of scoresToValidate) {
+    const val = Number(score.value);
+    if (isNaN(val) || val < 1 || val > 10) {
+      throw new Error(`Invalid ${score.name}: must be a number between 1 and 10`);
+    }
+  }
+
   if (!Array.isArray(data.evidences) || data.evidences.length === 0) {
     throw new Error("Invalid evidences array");
   }

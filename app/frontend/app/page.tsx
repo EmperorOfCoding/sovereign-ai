@@ -207,32 +207,53 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
 
     // Fetch from backend
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const controller = new AbortController();
+
     fetch(`${backendUrl}/api/research`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query }),
+      signal: controller.signal,
     })
       .then(async (res) => {
-        const body = await res.json();
         if (res.status === 429) {
           setApiError('RATE_LIMIT_EXCEEDED');
           setStep(4);
           return;
         }
-        if (!res.ok || !body.success) {
+
+        const contentType = res.headers.get("content-type");
+        if (!res.ok || !contentType || !contentType.includes("application/json")) {
           setApiError('ANALYSIS_FAILED');
           setStep(4);
           return;
         }
-        setAnalysisResults(body.data);
-        setStep(4);
+
+        try {
+          const body = await res.json();
+          if (!body.success) {
+            setApiError('ANALYSIS_FAILED');
+          } else {
+            setAnalysisResults(body.data);
+          }
+          setStep(4);
+        } catch (err) {
+          setApiError('ANALYSIS_FAILED');
+          setStep(4);
+        }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
         setApiError('ANALYSIS_FAILED');
         setStep(4);
       });
 
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      controller.abort();
+    };
   }, [isOpen, query]);
 
   useEffect(() => {

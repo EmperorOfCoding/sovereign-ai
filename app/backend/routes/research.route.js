@@ -37,7 +37,12 @@ router.post("/research", validateQuery, rateLimiter, async (req, res) => {
     const data = await analyzeMarket(req.validatedQuery);
     return res.json({ success: true, data });
   } catch (err) {
-    console.error("[/api/research] Error:", err.message);
+    const clientIp = req.headers["x-forwarded-for"] || req.ip;
+    console.error(`[/api/research] Request failed for query: "${req.validatedQuery}"`);
+    console.error(`- IP: ${clientIp}`);
+    console.error(`- Error: ${err.message}`);
+    console.error(`- Stack: ${err.stack}`);
+
     return res.status(500).json({
       error: "ANALYSIS_FAILED",
       message: "Erro ao processar a análise. Tente novamente.",

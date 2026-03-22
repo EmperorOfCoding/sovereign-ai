@@ -75,7 +75,9 @@ sovereign-ai/
    npm install
    ```
 
+
 3. Create `.env` in the **backend** directory:
+
    ```env
    # app/backend/.env  — NEVER commit this file
    OPENROUTER_API_KEY=your_openrouter_api_key_here
@@ -115,7 +117,7 @@ npm run test:coverage
 - ✅ Valid query returns 200 with correct shape
 - ✅ Empty / missing query returns 400
 - ✅ Query > 500 chars returns 400
-- ✅ Same IP 4th request returns 429
+- ✅ Same IP 6th request returns 429
 - ✅ Upstream API failure returns 500
 
 ## 📝 Development Notes

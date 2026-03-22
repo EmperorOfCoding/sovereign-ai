@@ -76,6 +76,19 @@ describe("POST /api/research", () => {
       evidences: expect.any(Array),
       nextSteps: expect.any(Array),
     });
+
+    // Verify fetch was called with correct parameters
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(options.method).toBe("POST");
+    expect(options.headers).toMatchObject({
+      Authorization: "Bearer test-key",
+      "Content-Type": "application/json",
+    });
+    const body = JSON.parse(options.body);
+    expect(body.model).toBe("anthropic/claude-sonnet-4.5");
+    expect(body.messages[1].content).toContain("SaaS para logística no Brasil");
   });
 
   test("2. Empty query returns 400 validation error", async () => {

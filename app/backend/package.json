@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node node_modules/jest/bin/jest.js --forceExit",
-    "test:coverage": "node node_modules/jest/bin/jest.js --coverage --forceExit",
+    "test": "node node_modules/jest/bin/jest.js",
+    "test:coverage": "node node_modules/jest/bin/jest.js --coverage",
+    "test:detect": "node node_modules/jest/bin/jest.js --detectOpenHandles",
     "start": "node index.js"
   },
   "keywords": [],
