@@ -305,7 +305,7 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
                     <h4 className="font-bold text-white uppercase text-base tracking-widest">Próximos Passos Recomendados</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {analysisResults.nextSteps.map((step, i) => (
+                    {analysisResults.nextSteps.map((nextStep, i) => (
                       <motion.div 
                         key={i}
                         initial={{ opacity: 0, x: -10 }}
@@ -316,7 +316,7 @@ const SearchResultsModal = ({ isOpen, onClose, query }: { isOpen: boolean; onClo
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 border border-primary/20 group-hover:bg-primary group-hover:text-black transition-all">
                           <span className="text-primary group-hover:text-black text-xs font-black font-mono">{String(i + 1).padStart(2, '0')}</span>
                         </div>
-                        <p className="text-base text-zinc-300 leading-relaxed font-semibold group-hover:text-white transition-colors">{step}</p>
+                        <p className="text-base text-zinc-300 leading-relaxed font-semibold group-hover:text-white transition-colors">{nextStep}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -620,9 +620,15 @@ const CompetitiveAdvantage = () => (
         viewport={{ once: true }}
         className="bg-surface-card p-10 rounded-2xl border border-white/10 text-center glow-border"
       >
-        <div className="text-primary text-7xl font-bold mb-4">98.4%</div>
-        <div className="text-xl font-bold uppercase tracking-widest mb-2">Precisão Preditiva</div>
-        <div className="text-zinc-500 text-sm mb-10">Taxa de sucesso na validação de modelos SaaS e Consumer Tech em 2023.</div>
+        <div className="text-primary text-5xl font-bold mb-4 uppercase tracking-tighter">Demo Data</div>
+        <div className="text-xl font-bold uppercase tracking-widest mb-2 opacity-50">Precisão Preditiva</div>
+        <div className="text-zinc-500 text-sm mb-10 leading-relaxed">
+          Taxa de sucesso na validação de modelos SaaS e Consumer Tech em 2023.
+          <br />
+          <span className="text-[0.625rem] text-primary/40 mt-4 block uppercase tracking-widest">
+            * Métricas ilustrativas para fins de demonstração
+          </span>
+        </div>
         <div className="flex justify-center gap-2">
           {[1, 0.85, 0.7, 0.55, 0.4, 0.25].map((op, i) => (
             <div key={i} className="w-1.5 h-10 bg-primary rounded-sm" style={{ opacity: op }} />

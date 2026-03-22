@@ -104,17 +104,20 @@ yarn test
 ## 📝 Development Notes
 
 ### IDE Configuration (jsconfig.json)
+
 To prevent VS Code (or other IDEs) from unnecessarily parsing and validating third-party packages inside `node_modules` — which can lead to false positive errors like `File '@ljharb/tsconfig' not found` — we maintain `jsconfig.json` configurations:
 - `app/backend/jsconfig.json`: Marks the backend as an isolated JavaScript project, instructing the IDE to ignore its `node_modules`.
 - `/jsconfig.json` (Root): A global fallback configuration that ignores `node_modules` across the entire workspace.
 
 ### Frontend Architecture
+
 - **CSS Architecture**: We strictly use CSS Variables for our colors defined in `globals.css` and map them into the custom configuration in `tailwind.config.ts`.
 - **Landing Page Integration**: The main landing page is defined in `app/page.tsx`, functioning as a Client Component to manage scroll intersection reveal effects globally (`revealOnScroll`).
 - **Typography**: We use `Space Grotesk` customized inside the Next.js `layout.tsx` to prevent cumulative layout shift, leveraging `next/font/google`.
 
 ### Recent Enhancements (March 2026)
-- **Advanced Interactive UI**: Implemented high-fidelity animations using `framer-motion`, including staggered text entries, 3D card tilts, and dynamic timeline visualizations.
+
+- **Advanced Interactive UI**: Implemented high-fidelity animations using `motion` (formerly `framer-motion`). We utilize the `motion/react` export for seamless React integration and performance optimization.
 - **Enhanced Search Modal**: Redesigned the AI analysis modal with expanded width (`max-w-5xl`), improved typography for readability, and categorical data breakdown (Evidences, Indicators, AI Summary, Next Steps, Verdict).
 - **Interactive Roadmap**: Developed a scroll-reactive execution roadmap with visual timeline connections and staggered card reveals.
 - **Simplified Navigation**: Removed non-essential links (API, Documentation) and hidden the login system to focus on the core value proposition of the landing page.
