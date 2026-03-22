@@ -87,7 +87,9 @@ sovereign-ai/
    FRONTEND_ORIGIN=http://localhost:3000
    ```
 
+
 4. Create `.env.local` in the **frontend** directory:
+
    ```env
    # app/frontend/.env.local
    NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
@@ -164,12 +166,12 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 For questions or support, please contact [suporte@sovereign-ai.com](mailto:suporte@sovereign-ai.com).
 
-## 📄 Acknowledgments
+## 💡 Acknowledgments
 
-- Built with Next.js 14
-- Tailwind CSS for styling
-- Shadcn UI for components
-- TanStack Query for data fetching
+- **OpenRouter** for providing access to Claude 3.5 Sonnet.
+- **Framer Motion** for the advanced UI micro-interactions.
+- **Custom CSS Variables** for the flexible design system.
+- **Lucide React** for the consistent icon set.
 
 ---
 

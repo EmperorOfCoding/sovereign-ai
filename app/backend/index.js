@@ -8,7 +8,18 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:3000";
 
 app.use(cors({ origin: FRONTEND_ORIGIN }));
-app.set("trust proxy", 1); // trust X-Forwarded-For from reverse proxies and tests
+// Trust Proxy configuration (for correct IP detection behind proxies)
+const TRUST_PROXY = process.env.TRUST_PROXY || "false";
+if (TRUST_PROXY === "true" || TRUST_PROXY === "1") {
+  app.set("trust proxy", true);
+} else if (TRUST_PROXY === "false" || TRUST_PROXY === "0") {
+  app.set("trust proxy", false);
+} else {
+  const hops = parseInt(TRUST_PROXY, 10);
+  if (!isNaN(hops)) {
+    app.set("trust proxy", hops);
+  }
+}
 app.use(express.json());
 
 // Request ID Middleware

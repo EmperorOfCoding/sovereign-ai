@@ -81,7 +81,9 @@ async function analyzeMarket(query) {
     try {
       parsed = JSON.parse(rawContent);
     } catch (err) {
-      throw new Error(`Failed to parse AI response as JSON: ${err.message}. Raw content: ${rawContent}`);
+      const preview = (rawContent || "").substring(0, 50);
+      const len = (rawContent || "").length;
+      throw new Error(`Failed to parse AI response as JSON: ${err.message}. Content length: ${len}, Preview: ${preview}...`);
     }
 
     validateResult(parsed);
@@ -125,6 +127,8 @@ function validateResult(data) {
     if (isNaN(val) || val < 1 || val > 10) {
       throw new Error(`Invalid ${score.name}: must be a number between 1 and 10`);
     }
+    // Ensure the value in the data object is the numeric one
+    data[score.name] = val;
   }
 
   if (!Array.isArray(data.evidences) || data.evidences.length === 0) {
