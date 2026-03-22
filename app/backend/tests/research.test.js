@@ -14,6 +14,7 @@ global.fetch = jest.fn();
 process.env.OPENROUTER_API_KEY = "test-key";
 process.env.RATE_LIMIT_MAX = "3";
 process.env.RATE_LIMIT_WINDOW_HOURS = "24";
+process.env.TRUST_PROXY = "1";
 
 const app = require("../index");
 
@@ -139,6 +140,8 @@ describe("POST /api/research", () => {
 
     expect(res.status).toBe(429);
     expect(res.body.error).toBe("RATE_LIMIT_EXCEEDED");
+    expect(res.body.retryAfter).toBeGreaterThan(0);
+    expect(typeof res.body.retryAfter).toBe("number");
   });
 
   test("6. OpenRouter API failure returns 500", async () => {
