@@ -24,7 +24,7 @@ export default function Hero() {
 
   // Configurable Video URL
   const videoUrl = process.env.NEXT_PUBLIC_MUX_VIDEO_URL || 
-    "https://player.mux.com/5OTUJtFO003U9enYhdQeXRHob01CX9dvO02JxTEH021DJS8?metadata-video-title=Matrix+New&video-title=Matrix+New&autoplay=autoplay&loop=loop&muted&playsinline";
+    "https://player.mux.com/jZJwlj2JLC79VyxbQ61ORYe8n45xC1cFt82gvABrWeM?metadata-video-title=Validate+Idea+AI+Video&video-title=Validate+Idea+AI+Video&autoplay=autoplay&loop=loop&muted&playsinline";
 
   if (!mounted) return <div className="min-h-screen pt-32 pb-20 px-6 bg-surface" />;
 
@@ -86,13 +86,20 @@ export default function Hero() {
           Tome decisões inteligentes baseadas em dados reais
         </motion.p>
         
-        <MagneticButton
-          className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 mb-20 mx-auto cursor-pointer"
-          strength={0.4}
-        >
-          Começar Agora
-          <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-        </MagneticButton>
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 2.6, duration: 0.8 }}
+           className="mb-20 mx-auto w-fit"
+         >
+           <MagneticButton
+             className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 cursor-pointer"
+             strength={0.4}
+           >
+             Começar Agora
+             <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+           </MagneticButton>
+         </motion.div>
       </div>
 
       <motion.div 
@@ -121,7 +128,7 @@ export default function Hero() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Como o mercado de SaaS no Brasil reagirá à nova regulamentação?"
+                placeholder="Descreva um problema que você quer resolver ou uma solução que quer validar no mercado..."
                 autoComplete="off"
                 className="w-full bg-transparent text-zinc-300 text-sm md:text-base outline-none px-4 placeholder:text-zinc-600 h-full font-mono flex-1"
               />

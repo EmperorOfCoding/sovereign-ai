@@ -41,8 +41,13 @@ async function analyzeMarket(query) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured");
 
+  const isDebug = process.env.LOG_LEVEL === "debug";
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
+
+  if (isDebug) {
+    console.log(`[OpenRouter] → Sending request | model: ${MODEL} | query length: ${query.length}`);
+  }
 
   try {
     const response = await fetch(OPENROUTER_API_URL, {
@@ -50,7 +55,7 @@ async function analyzeMarket(query) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+        "HTTP-Referer": process.env.FRONTEND_ORIGIN?.split(",")[0] || "http://localhost:3000",
         "X-Title": "Sovereign AI",
       },
       signal: controller.signal,
@@ -67,12 +72,23 @@ async function analyzeMarket(query) {
 
     clearTimeout(timeoutId);
 
+    if (isDebug) {
+      console.log(`[OpenRouter] ← HTTP ${response.status} | content-type: ${response.headers.get("content-type")}`);
+    }
+
     if (!response.ok) {
       const errorBody = await response.text();
+      console.error(`[OpenRouter] ← Error body: ${errorBody}`);
       throw new Error(`OpenRouter error ${response.status}: ${errorBody}`);
     }
 
     const json = await response.json();
+
+    if (isDebug) {
+      const usage = json.usage;
+      console.log(`[OpenRouter] ← Tokens: prompt=${usage?.prompt_tokens} completion=${usage?.completion_tokens} total=${usage?.total_tokens}`);
+    }
+
     const rawContent = json.choices?.[0]?.message?.content;
 
     if (!rawContent) throw new Error("Empty response from OpenRouter");
@@ -81,12 +97,18 @@ async function analyzeMarket(query) {
     try {
       parsed = JSON.parse(rawContent);
     } catch (err) {
-      const preview = (rawContent || "").substring(0, 50);
+      const preview = (rawContent || "").substring(0, 100);
       const len = (rawContent || "").length;
+      console.error(`[OpenRouter] ← JSON parse failed. Content (${len} chars): ${preview}...`);
       throw new Error(`Failed to parse AI response as JSON: ${err.message}. Content length: ${len}, Preview: ${preview}...`);
     }
 
     validateResult(parsed);
+
+    if (isDebug) {
+      console.log(`[OpenRouter] ✅ Analysis complete | verdict: ${parsed.verdict} | pain: ${parsed.painScore}`);
+    }
+
     return parsed;
   } catch (err) {
     clearTimeout(timeoutId);

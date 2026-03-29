@@ -14,7 +14,7 @@
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+- **Frontend**: Next.js 14 (App Router) with **Turbopack**, React 18, TypeScript
 - **Backend**: Node.js + Express 5, layered architecture (middleware/services/routes)
 - **AI**: OpenRouter API → `anthropic/claude-sonnet-4-5`
 - **Rate Limiting**: `express-rate-limit` (IP-based)
@@ -149,6 +149,8 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 - **IP Rate Limiting**: 5 requests/IP/24h via `express-rate-limit` to protect API credits before user accounts exist.
 - **TDD**: All backend endpoints covered with Jest + Supertest (6 tests, 0 real API calls).
 - **Advanced Interactive UI**: High-fidelity animations using `motion` (Framer Motion). Enhanced search modal, interactive roadmap with staggered reveals.
+- **UI Performance & Sequencing**: Fixed issues where primary CTA buttons would appear before the page content was fully animated/loaded by implementing sequenced entrance animations.
+- **Turbopack Integration**: Enabled Next.js Turbopack for local development, reducing start times and HMR (Hot Module Replacement) latency.
 
 ## 📝 License
 
