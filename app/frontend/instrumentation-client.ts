@@ -4,7 +4,7 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Percentage of transactions captured for performance monitoring
-  tracesSampleRate: 1.0,
+  tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1"),
 
   // Percentage of sessions recorded for session replay
   replaysSessionSampleRate: 0.1,

@@ -32,7 +32,7 @@ function validateQuery(req, res, next) {
  * Body: { query: string }
  * Returns: { success: true, data: AnalysisResult } | error
  */
-router.post("/research", validateQuery, rateLimiter, async (req, res) => {
+router.post("/research", validateQuery, rateLimiter, async (req, res, next) => {
   try {
     const data = await analyzeMarket(req.validatedQuery);
     return res.json({ success: true, data });
@@ -44,12 +44,9 @@ router.post("/research", validateQuery, rateLimiter, async (req, res) => {
     console.error(`- RequestID: ${req.id}`);
     console.error(`- IP: ${clientIp}`);
     console.error(`- Error: ${err.message}`);
-    console.error(`- Stack: ${err.stack}`);
 
-    return res.status(500).json({
-      error: "ANALYSIS_FAILED",
-      message: "Erro ao processar a análise. Tente novamente.",
-    });
+    // Let global error handler handle it, which correctly maps status/code
+    next(err);
   }
 });
 

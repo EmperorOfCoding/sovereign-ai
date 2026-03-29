@@ -8,7 +8,7 @@
 - **Pain Point Identification**: Discover and analyze real market pain points.
 - **Evidence Gathering**: Collect and organize relevant data to support your analysis.
 - **Key Indicators**: Get actionable insights to guide your decisions.
-- **AI-Powered Analysis**: Powered by `anthropic/claude-sonnet-4-5` via OpenRouter with token-optimized prompts.
+- **AI-Powered Analysis**: Powered by `anthropic/claude-sonnet-4.5` via OpenRouter with token-optimized prompts.
 - **IP-Based Rate Limiting**: 5 requests per IP per 24h to control API costs before user accounts are active.
 - **Modern Landing Page**: Fully responsive, built with Next.js and Framer Motion.
 
@@ -16,7 +16,7 @@
 
 - **Frontend**: Next.js 14 (App Router) with **Turbopack**, React 18, TypeScript
 - **Backend**: Node.js + Express 5, layered architecture (middleware/services/routes)
-- **AI**: OpenRouter API → `anthropic/claude-sonnet-4-5`
+- **AI**: OpenRouter API → `anthropic/claude-sonnet-4.5`
 - **Rate Limiting**: `express-rate-limit` (IP-based)
 - **Testing**: Jest + Supertest
 - **Styling**: Custom CSS Variables + Framer Motion
@@ -119,7 +119,7 @@ npm run test:coverage
 - ✅ Valid query returns 200 with correct shape
 - ✅ Empty / missing query returns 400
 - ✅ Query > 500 chars returns 400
-- ✅ Same IP 6th request returns 429
+- ✅ Same IP 4th request returns 429 (RATE_LIMIT_MAX = 3)
 - ✅ Upstream API failure returns 500
 
 ## 📝 Development Notes
@@ -145,7 +145,7 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 
 ### Recent Enhancements (March 2026)
 
-- **OpenRouter Integration**: Connected to `anthropic/claude-sonnet-4-5` via OpenRouter for real market analysis.
+- **OpenRouter Integration**: Connected to `anthropic/claude-sonnet-4.5` via OpenRouter for real market analysis.
 - **IP Rate Limiting**: 5 requests/IP/24h via `express-rate-limit` to protect API credits before user accounts exist.
 - **TDD**: All backend endpoints covered with Jest + Supertest (6 tests, 0 real API calls).
 - **Advanced Interactive UI**: High-fidelity animations using `motion` (Framer Motion). Enhanced search modal, interactive roadmap with staggered reveals.

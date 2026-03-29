@@ -19,7 +19,10 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g., curl, Postman, server-to-server)
       if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS policy: origin '${origin}' not allowed`));
+      const err = new Error(`CORS policy: origin '${origin}' not allowed`);
+      err.status = 403;
+      err.code = "FORBIDDEN";
+      callback(err);
     },
   })
 );
@@ -56,9 +59,11 @@ app.use("/api", researchRoute);
 
 // ── Global Error Handler ──────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(`[ERROR] ${err.message}`);
+  const status = err.status || 500;
+  const code = err.code || "INTERNAL_ERROR";
+  console.error(`[ERROR] ${code} (${status}): ${err.message}`);
   if (isDebug) console.error(err.stack);
-  res.status(500).json({ error: "INTERNAL_ERROR", message: "Erro interno. Tente novamente." });
+  res.status(status).json({ error: code, message: err.message || "Erro interno. Tente novamente." });
 });
 
 // ── Startup ───────────────────────────────────────────────────────────────────

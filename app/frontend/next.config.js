@@ -15,17 +15,13 @@ module.exports = withSentryConfig(nextConfig, {
   // Only print Sentry CLI output on error
   silent: !process.env.CI,
 
-  // Upload a larger set of source maps for prettier stack traces
-  widenClientFileUpload: true,
-
-  // Hides source maps from the browser bundle for security
-  hideSourceMaps: true,
-
-  // Disable the Sentry telemetry to avoid extra network calls
-  disableLogger: true,
-
   // Automatically instrument React component display names for better traces
   reactComponentAnnotation: {
     enabled: true,
+  },
+
+  // Sentry configuration for Turbopack compatibility
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
   },
 });

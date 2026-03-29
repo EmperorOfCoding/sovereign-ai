@@ -1,14 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Rocket, Cpu, FileText } from 'lucide-react';
 
 export default function Roadmap() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  
-  if (!mounted) return <section className="max-w-6xl mx-auto px-6 py-32 relative" />;
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-32 relative">

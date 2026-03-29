@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function ValidationArchitecture() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const shouldReduceMotion = useReducedMotion();
 
-  if (!mounted) return <section className="max-w-6xl mx-auto px-6 py-32" />;
+  const animationProps = (delay: number) => ({
+    initial: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 },
+    whileInView: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 },
+    transition: { delay: shouldReduceMotion ? 0 : delay },
+  });
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-32">
@@ -39,10 +42,8 @@ export default function ValidationArchitecture() {
         ].map((item, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            {...animationProps(i * 0.2)}
             viewport={{ once: true }}
-            transition={{ delay: i * 0.2 }}
             whileHover={{ y: -6 }}
             className="bg-surface-card border border-white/5 p-8 rounded-xl relative overflow-hidden group hover:border-primary/20 transition-colors"
           >

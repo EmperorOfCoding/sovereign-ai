@@ -20,7 +20,14 @@ export default function Home() {
         <ValidationArchitecture />
         <CompetitiveAdvantage />
         <PainSignals />
-        <Verdict />
+        <Verdict 
+          score={82}
+          analysis="Sua ideia possui um gap técnico claro no mercado brasileiro. A barreira de entrada é moderada, mas a retenção projetada é alta devido à dor latente identificada no setor logístico. Recomendamos focar no MVP para integração com SEFAZ."
+          badges={[
+            { label: '[+] ALTO POTENCIAL DE LTV', tone: 'positive' },
+            { label: '[!] CAC ELEVADO INICIAL', tone: 'neutral' }
+          ]}
+        />
         <Roadmap />
         <CTA />
       </main>

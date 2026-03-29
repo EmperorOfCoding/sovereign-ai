@@ -1,14 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 
 export default function CTA() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const handleStart = () => {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
-  if (!mounted) return <section className="max-w-6xl mx-auto px-6 pb-32" />;
+  const handleDemo = () => {
+    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank'); // Placeholder demo
+  };
 
   return (
     <section className="max-w-6xl mx-auto px-6 pb-32">
@@ -18,7 +24,11 @@ export default function CTA() {
         viewport={{ once: true }}
         className="bg-primary rounded-3xl p-12 md:p-20 text-center relative overflow-hidden"
       >
-        <div className="absolute inset-0 opacity-[0.06] font-mono text-[0.625rem] leading-none pointer-events-none select-none overflow-hidden flex flex-wrap text-black">
+        <div 
+          aria-hidden="true" 
+          role="presentation"
+          className="absolute inset-0 opacity-[0.06] font-mono text-[0.625rem] leading-none pointer-events-none select-none overflow-hidden flex flex-wrap text-black"
+        >
           {Array(20).fill('VALIDATE. DATA. TRUTH. SOVEREIGN. SYSTEM. ACTIVE. 01010101. ').join('')}
         </div>
         <div className="relative z-10 text-black flex flex-col items-center">
@@ -60,11 +70,17 @@ export default function CTA() {
             transition={{ delay: 1.2, duration: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <button className="group bg-black text-primary px-10 py-4 font-bold rounded flex items-center justify-center gap-2 hover:bg-zinc-900 hover:shadow-[0_0_20px_rgba(51,255,0,0.2)] active:scale-95 transition-all duration-300 cursor-pointer">
+            <button 
+              onClick={handleStart}
+              className="group bg-black text-primary px-10 py-4 font-bold rounded flex items-center justify-center gap-2 hover:bg-zinc-900 hover:shadow-[0_0_20px_rgba(51,255,0,0.2)] active:scale-95 transition-all duration-300 cursor-pointer"
+            >
               Começar Agora
               <Zap size={20} className="group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(51,255,0,0.8)] transition-all duration-300" />
             </button>
-            <button className="border border-black/30 text-black px-10 py-4 font-bold rounded hover:bg-black/5 hover:border-black/50 active:scale-95 transition-all duration-300 cursor-pointer">
+            <button 
+              onClick={handleDemo}
+              className="border border-black/30 text-black px-10 py-4 font-bold rounded hover:bg-black/5 hover:border-black/50 active:scale-95 transition-all duration-300 cursor-pointer"
+            >
               Ver Demonstração
             </button>
           </motion.div>

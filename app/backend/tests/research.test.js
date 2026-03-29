@@ -7,16 +7,34 @@
 
 const request = require("supertest");
 
-// Mock fetch before requiring the app
-global.fetch = jest.fn();
+let app;
+let originalEnv;
+let originalFetch;
 
-// Set required env vars before loading app
-process.env.OPENROUTER_API_KEY = "test-key";
-process.env.RATE_LIMIT_MAX = "3";
-process.env.RATE_LIMIT_WINDOW_HOURS = "24";
-process.env.TRUST_PROXY = "1";
+beforeAll(() => {
+  // Save original state
+  originalEnv = { ...process.env };
+  originalFetch = global.fetch;
 
-const app = require("../index");
+  // Mock fetch
+  global.fetch = jest.fn();
+
+  // Set required env vars
+  process.env.OPENROUTER_API_KEY = "test-key";
+  process.env.RATE_LIMIT_MAX = "3";
+  process.env.RATE_LIMIT_WINDOW_HOURS = "24";
+  process.env.TRUST_PROXY = "1";
+
+  // Load app with mocks active
+  jest.resetModules();
+  app = require("../index");
+});
+
+afterAll(() => {
+  // Restore original state
+  process.env = originalEnv;
+  global.fetch = originalFetch;
+});
 
 const MOCK_SUCCESS_RESPONSE = {
   evidences: [
@@ -40,6 +58,8 @@ const MOCK_SUCCESS_RESPONSE = {
 function mockFetchSuccess() {
   global.fetch.mockResolvedValueOnce({
     ok: true,
+    status: 200,
+    headers: { get: (name) => (name.toLowerCase() === 'content-type' ? 'application/json' : null) },
     json: async () => ({
       choices: [{ message: { content: JSON.stringify(MOCK_SUCCESS_RESPONSE) } }],
     }),
@@ -69,6 +89,9 @@ describe("POST /api/research", () => {
       .set("X-Forwarded-For", TEST_IPS.valid)
       .send({ query: "SaaS para logística no Brasil" });
 
+    if (res.status !== 200) {
+      console.log('DEBUG FAIL:', res.status, JSON.stringify(res.body, null, 2));
+    }
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toMatchObject({
@@ -156,6 +179,7 @@ describe("POST /api/research", () => {
       .set("X-Forwarded-For", TEST_IPS.apiError)
       .send({ query: "valid market question" });
 
+    if (res.status !== 500) console.log('DEBUG FAIL 6:', res.status, res.body);
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("ANALYSIS_FAILED");
   });

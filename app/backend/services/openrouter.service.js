@@ -70,8 +70,6 @@ async function analyzeMarket(query) {
       }),
     });
 
-    clearTimeout(timeoutId);
-
     if (isDebug) {
       console.log(`[OpenRouter] ← HTTP ${response.status} | content-type: ${response.headers.get("content-type")}`);
     }
@@ -79,7 +77,10 @@ async function analyzeMarket(query) {
     if (!response.ok) {
       const errorBody = await response.text();
       console.error(`[OpenRouter] ← Error body: ${errorBody}`);
-      throw new Error(`OpenRouter error ${response.status}: ${errorBody}`);
+      const err = new Error(`OpenRouter error ${response.status}: ${errorBody}`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
     }
 
     const json = await response.json();
@@ -91,7 +92,12 @@ async function analyzeMarket(query) {
 
     const rawContent = json.choices?.[0]?.message?.content;
 
-    if (!rawContent) throw new Error("Empty response from OpenRouter");
+    if (!rawContent) {
+      const err = new Error("Empty response from OpenRouter");
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
 
     let parsed;
     try {
@@ -100,7 +106,10 @@ async function analyzeMarket(query) {
       const preview = (rawContent || "").substring(0, 100);
       const len = (rawContent || "").length;
       console.error(`[OpenRouter] ← JSON parse failed. Content (${len} chars): ${preview}...`);
-      throw new Error(`Failed to parse AI response as JSON: ${err.message}. Content length: ${len}, Preview: ${preview}...`);
+      const parseErr = new Error(`Failed to parse AI response as JSON: ${err.message}. Content length: ${len}, Preview: ${preview}...`);
+      parseErr.status = 500;
+      parseErr.code = "ANALYSIS_FAILED";
+      throw parseErr;
     }
 
     validateResult(parsed);
@@ -111,11 +120,12 @@ async function analyzeMarket(query) {
 
     return parsed;
   } catch (err) {
-    clearTimeout(timeoutId);
     if (err.name === "AbortError") {
       throw new Error(`Request to OpenRouter timed out after ${OPENROUTER_TIMEOUT_MS}ms`);
     }
     throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -134,7 +144,12 @@ function validateResult(data) {
     "verdictReason",
   ];
   for (const key of required) {
-    if (data[key] === undefined) throw new Error(`Missing field in AI response: ${key}`);
+    if (data[key] === undefined) {
+      const err = new Error(`Missing field in AI response: ${key}`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
   }
 
   // Number/Range validation
@@ -147,20 +162,64 @@ function validateResult(data) {
   for (const score of scoresToValidate) {
     const val = Number(score.value);
     if (isNaN(val) || val < 1 || val > 10) {
-      throw new Error(`Invalid ${score.name}: must be a number between 1 and 10`);
+      const err = new Error(`Invalid ${score.name}: must be a number between 1 and 10`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
     }
     // Ensure the value in the data object is the numeric one
     data[score.name] = val;
   }
 
   if (!Array.isArray(data.evidences) || data.evidences.length === 0) {
-    throw new Error("Invalid evidences array");
+    const err = new Error("Invalid evidences array");
+    err.status = 500;
+    err.code = "ANALYSIS_FAILED";
+    throw err;
   }
+
+  data.evidences.forEach((ev, idx) => {
+    if (!ev || typeof ev !== "object" || Array.isArray(ev)) {
+      const err = new Error(`Evidence at index ${idx} must be an object`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
+    if (typeof ev.source !== "string" || !ev.source.trim()) {
+      const err = new Error(`Evidence at index ${idx} has invalid source`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
+    if (typeof ev.text !== "string" || !ev.text.trim()) {
+      const err = new Error(`Evidence at index ${idx} has invalid text`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
+  });
+
   if (!Array.isArray(data.nextSteps) || data.nextSteps.length === 0) {
-    throw new Error("Invalid nextSteps array");
+    const err = new Error("Invalid nextSteps array");
+    err.status = 500;
+    err.code = "ANALYSIS_FAILED";
+    throw err;
   }
+
+  data.nextSteps.forEach((step, idx) => {
+    if (typeof step !== "string" || !step.trim()) {
+      const err = new Error(`Next step at index ${idx} must be a non-empty string`);
+      err.status = 500;
+      err.code = "ANALYSIS_FAILED";
+      throw err;
+    }
+  });
+
   if (!["VÁLIDO", "INVÁLIDO"].includes(data.verdict)) {
-    throw new Error(`Invalid verdict value: ${data.verdict}`);
+    const err = new Error(`Invalid verdict value: ${data.verdict}`);
+    err.status = 500;
+    err.code = "ANALYSIS_FAILED";
+    throw err;
   }
 }
 

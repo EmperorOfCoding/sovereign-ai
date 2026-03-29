@@ -12,10 +12,10 @@ import {
   Cpu, 
   DollarSign, 
   Compass, 
-  Gavel, 
   CheckCircle2 
 } from 'lucide-react';
 import ScoreBar from './ScoreBar';
+import Verdict from './Verdict';
 import { AnalysisResult, ApiError } from '../types/analysis';
 
 interface SearchResultsModalProps {
@@ -353,61 +353,21 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
                 <div className="border-t border-white/5" />
 
                 {/* 5. Veredito */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }} 
-                  whileInView={{ 
-                    opacity: 1, 
-                    y: 0,
-                    boxShadow: [
-                      "0 0 0px rgba(51, 255, 0, 0)", 
-                      "0 0 40px rgba(51, 255, 0, 0.4)", 
-                      "0 0 15px rgba(51, 255, 0, 0.1)"
-                    ]
-                  }} 
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ 
-                    opacity: { duration: 0.5, delay: 0.6 },
-                    y: { duration: 0.5, delay: 0.6 },
-                    boxShadow: { duration: 1.5, delay: 0.8, times: [0, 0.3, 1] }
-                  }}
-                  className="verdict-shimmer"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Gavel size={22} className="text-primary" />
-                    </div>
-                    <h4 className="font-bold text-white uppercase text-base tracking-widest">Veredito Sovereign</h4>
-                  </div>
-                  <div className={`p-8 rounded-2xl border-2 transition-all duration-500 ${
+                <Verdict 
+                  score={(analysisResults.painScore + analysisResults.aiSummaryScore + analysisResults.paymentScore) / 3 * 10}
+                  analysis={analysisResults.verdictReason}
+                  badges={
                     analysisResults.verdict === 'VÁLIDO' 
-                      ? 'border-primary/40 bg-primary/5 shadow-primary-subtle' 
-                      : 'border-red-500/40 bg-red-500/5'
-                  }`}>
-                    <div className="flex items-center flex-wrap gap-4 mb-6">
-                      <div className={`px-5 py-2.5 rounded-full font-black text-lg uppercase tracking-widest flex items-center gap-2 ${
-                        analysisResults.verdict === 'VÁLIDO' 
-                          ? 'bg-primary text-black' 
-                          : 'bg-red-500 text-white'
-                      }`}>
-                        {analysisResults.verdict === 'VÁLIDO' ? '✓ Veredito: ' : '✗ Veredito: '} {analysisResults.verdict}
-                      </div>
-                      <div className="flex items-center gap-1.5 p-2 bg-black/20 rounded-lg">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div 
-                            key={i} 
-                            className={`w-3.5 h-7 rounded-md transition-all duration-1000 ${
-                              i <= Math.ceil(analysisResults.painScore / 2) ? 'bg-primary shadow-[0_0_10px_rgba(51,255,0,0.4)]' : 'bg-white/10'
-                            }`} 
-                            style={{ transitionDelay: `${i * 100}ms` }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-lg text-zinc-300 leading-relaxed font-medium">
-                      {analysisResults.verdictReason}
-                    </p>
-                  </div>
-                </motion.div>
+                      ? [
+                          { label: '[+] ALTO POTENCIAL DE LTV', tone: 'positive' },
+                          { label: '[!] CAC ELEVADO INICIAL', tone: 'neutral' }
+                        ]
+                      : [
+                          { label: '[-] BAIXA DEMANDA DETECTADA', tone: 'negative' },
+                          { label: '[!] COMPETIÇÃO SATURADA', tone: 'neutral' }
+                        ]
+                  }
+                />
 
                 {/* Action Button */}
                 <motion.div
