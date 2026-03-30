@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { randomUUID } = require("crypto");
 const researchRoute = require("./routes/research.route");
 
 const app = express();
@@ -42,7 +43,7 @@ app.use(express.json());
 
 // ── Request ID ────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
-  req.id = req.headers["x-request-id"] || require("crypto").randomUUID();
+  req.id = req.headers["x-request-id"] || randomUUID();
   res.setHeader("X-Request-Id", req.id);
   if (isDebug) {
     console.log(`[REQ] ${req.method} ${req.path} | origin: ${req.headers.origin || "—"} | id: ${req.id}`);
@@ -61,6 +62,7 @@ app.use("/api", researchRoute);
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   const code = err.code || "INTERNAL_ERROR";
+  if (isDebug) console.error('DEBUG GLOBAL ERROR:', { status, code, name: err.name, message: err.message });
   console.error(`[ERROR] ${code} (${status}): ${err.message}`);
   if (isDebug) console.error(err.stack);
   res.status(status).json({ error: code, message: err.message || "Erro interno. Tente novamente." });

@@ -49,8 +49,15 @@ export default function Verdict({
             />
           </motion.div>
           
-          <motion.div variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100 } } }} className="flex flex-col items-center mb-12">
-            <div className="relative w-40 h-40 flex items-center justify-center group cursor-default">
+          <motion.div 
+            variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100 } } }} 
+            className="flex flex-col items-center mb-12"
+          >
+            <div 
+              role="img"
+              aria-label={`Pontuação de viabilidade de mercado: ${Math.round(clampedScore)}%`}
+              className="relative w-40 h-40 flex items-center justify-center group cursor-default"
+            >
               <div className="absolute inset-0 border-2 border-primary/20 rounded-lg group-hover:rotate-12 transform transition-transform duration-700" />
               <div className="absolute inset-2 border border-primary/10 rounded-md bg-primary/5 group-hover:-rotate-12 transform transition-transform duration-700" />
               <svg aria-hidden="true" focusable={false} className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 160 160">
@@ -69,9 +76,9 @@ export default function Verdict({
                   className="text-primary drop-shadow-[0_0_8px_rgba(51,255,0,0.5)]"
                   strokeDasharray="345.6"
                   initial={{ strokeDashoffset: 345.6 }}
-                  whileInView={{ strokeDashoffset: shouldReduceMotion ? strokeDashoffset : strokeDashoffset }}
+                  whileInView={!shouldReduceMotion ? { strokeDashoffset } : undefined}
                   viewport={{ once: true }}
-                  animate={shouldReduceMotion ? { strokeDashoffset } : {}}
+                  animate={shouldReduceMotion ? { strokeDashoffset } : undefined}
                   transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
                   strokeLinecap="round"
                 />

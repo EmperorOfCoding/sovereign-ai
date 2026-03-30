@@ -10,4 +10,4 @@ export type AnalysisResult = {
   verdictReason: string;
 };
 
-export type ApiError = 'RATE_LIMIT_EXCEEDED' | 'ANALYSIS_FAILED' | null;
+export type ApiError = 'RATE_LIMIT_EXCEEDED' | 'ANALYSIS_FAILED' | 'INVALID_INPUT' | null;

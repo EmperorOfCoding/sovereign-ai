@@ -140,7 +140,8 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 ### Frontend Architecture
 
 - **CSS Architecture**: CSS Variables for all colors defined in `globals.css`.
-- **Landing Page**: `app/page.tsx` is a Client Component. The `SearchResultsModal` calls the backend API and handles real AI responses, rate-limit errors, and network failures.
+- **Landing Page**: `app/page.tsx` is a Server Component that composes high-fidelity client sections. The `SearchResultsModal` (client) calls the backend API and handles real AI responses, rate-limit errors, and network failures.
+
 - **Typography**: `Space Grotesk` via `next/font/google` to prevent layout shift.
 
 ### Recent Enhancements (March 2026)

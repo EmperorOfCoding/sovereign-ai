@@ -25,26 +25,26 @@ export default function ValidationArchitecture() {
             num: '01',
             title: 'Pesquisa Profunda',
             desc: 'Cruzamento massivo de dados setoriais, tendências de mercado e comportamento do consumidor em escala global.',
-            icon: <Search size={48} />
+            icon: <Search size={48} aria-hidden="true" />
           },
           {
             num: '02',
             title: 'Análise de Dores',
             desc: 'Identificação de problemas reais em redes sociais, fóruns e portais de reclamação para encontrar demandas reprimidas.',
-            icon: <AlertCircle size={48} />
+            icon: <AlertCircle size={48} aria-hidden="true" />
           },
           {
             num: '03',
             title: 'Veredito Honesto',
             desc: 'Análise final crítica sem viés otimista. Nossa IA dirá se o seu negócio tem tração ou se é uma perda de tempo.',
-            icon: <CheckCircle2 size={48} />
+            icon: <CheckCircle2 size={48} aria-hidden="true" />
           }
         ].map((item, i) => (
           <motion.div
             key={i}
             {...animationProps(i * 0.2)}
             viewport={{ once: true }}
-            whileHover={{ y: -6 }}
+            whileHover={shouldReduceMotion ? undefined : { y: -6 }}
             className="bg-surface-card border border-white/5 p-8 rounded-xl relative overflow-hidden group hover:border-primary/20 transition-colors"
           >
             <div className="absolute -right-3 -top-3 opacity-[0.07] group-hover:opacity-[0.12] transition-opacity text-white">
