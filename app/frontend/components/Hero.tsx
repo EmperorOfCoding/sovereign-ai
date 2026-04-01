@@ -7,38 +7,28 @@ import MagneticButton from './MagneticButton';
 import SearchResultsModal from './SearchResultsModal';
 
 export default function Hero() {
-  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim() !== '') {
+    const normalized = query.trim();
+    if (normalized !== '') {
+      setQuery(normalized);
       setIsOpen(true);
     }
   };
 
-  // Configurable Video URL
-  const baseVideoUrl = process.env.NEXT_PUBLIC_MUX_VIDEO_URL || 
-    "https://player.mux.com/jZJwlj2JLC79VyxbQ61ORYe8n45xC1cFt82gvABrWeM";
-  
-  // Appends standard background video parameters for seamless playback
-  const videoUrl = `${baseVideoUrl}?metadata-video-title=Validate+Idea+AI+Video&video-title=Validate+Idea+AI+Video&autoplay=1&loop=1&muted=1&playsinline=1`;
+  const scrollToSearch = () => {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
-  if (!mounted) {
-    return (
-      <div className="relative pt-32 pb-20 px-6 min-h-screen flex flex-col items-center justify-center bg-surface">
-        <div className="absolute inset-0 bg-black/70 z-0" />
-        <div className="max-w-4xl relative z-10 opacity-0">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 uppercase">Valide sua ideia</h1>
-        </div>
-      </div>
-    );
-  }
+  const videoUrl = process.env.NEXT_PUBLIC_MUX_VIDEO_URL || 
+    "https://player.mux.com/jZJwlj2JLC79VyxbQ61ORYe8n45xC1cFt82gvABrWeM?metadata-video-title=Validate+Idea+AI+Video&video-title=Validate+Idea+AI+Video&autoplay=autoplay&loop=loop&muted&playsinline";
 
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-screen flex flex-col items-center justify-center text-center">
@@ -50,6 +40,8 @@ export default function Hero() {
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
           title="Background video"
+          aria-hidden="true"
+          tabIndex={-1}
         />
         {/* Dark overlay to ensure text readability */}
         <div className="absolute inset-0 bg-black/70" />
@@ -99,18 +91,20 @@ export default function Hero() {
         </motion.p>
         
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2.8, duration: 0.8 }}
-        >
-          <MagneticButton
-            className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 mb-20 mx-auto cursor-pointer"
-            strength={0.4}
-          >
-            Começar Agora
-            <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-          </MagneticButton>
-        </motion.div>
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 2.6, duration: 0.8 }}
+           className="mb-20 mx-auto w-fit"
+         >
+           <MagneticButton
+             onClick={scrollToSearch}
+             className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 cursor-pointer"
+             strength={0.4}
+           >
+             Começar Agora
+             <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+           </MagneticButton>
+         </motion.div>
       </div>
 
       <motion.div 
@@ -136,11 +130,13 @@ export default function Hero() {
             <div className="flex-1 w-full border border-white/10 focus-within:border-white/30 transition-colors h-14 flex items-center bg-black/20">
               <Search size={20} className="text-primary ml-4 shrink-0 sm:hidden" />
               <input 
+                id="search-input"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Como o mercado de SaaS no Brasil reagirá à nova regulamentação?"
+                placeholder="Descreva um problema que você quer resolver ou uma solução que quer validar no mercado..."
                 autoComplete="off"
+                aria-label="Pesquisar problema ou solução para validar"
                 className="w-full bg-transparent text-zinc-300 text-sm md:text-base outline-none px-4 placeholder:text-zinc-600 h-full font-mono flex-1"
               />
             </div>

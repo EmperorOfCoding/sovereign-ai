@@ -1,13 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 export default function PainSignals() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return <section className="max-w-6xl mx-auto px-6 py-32" />;
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-32">

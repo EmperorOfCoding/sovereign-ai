@@ -4,15 +4,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const ScoreBar = ({ score, maxScore = 10, label, delay = 0 }: { score: number; maxScore?: number; label: string; delay?: number }) => {
-  const percentage = (score / maxScore) * 100;
-  const getColor = (s: number) => {
-    if (s >= 7) return 'bg-primary';
-    if (s >= 4) return 'bg-yellow-500';
+  const validatedMaxScore = Math.max(maxScore, 1);
+  const clampedScore = Math.max(0, Math.min(score, validatedMaxScore));
+  const percentage = (clampedScore / validatedMaxScore) * 100;
+  
+  const getColor = (p: number) => {
+    if (p >= 70) return 'bg-primary';
+    if (p >= 40) return 'bg-yellow-500';
     return 'bg-red-500';
   };
-  const getTextColor = (s: number) => {
-    if (s >= 7) return 'text-primary';
-    if (s >= 4) return 'text-yellow-500';
+  const getTextColor = (p: number) => {
+    if (p >= 70) return 'text-primary';
+    if (p >= 40) return 'text-yellow-500';
     return 'text-red-500';
   };
 
@@ -24,10 +27,10 @@ const ScoreBar = ({ score, maxScore = 10, label, delay = 0 }: { score: number; m
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.8, delay, ease: 'easeOut' }}
-          className={`h-full rounded-full ${getColor(score)}`}
+          className={`h-full rounded-full ${getColor(percentage)}`}
         />
       </div>
-      <span className={`text-sm font-bold font-mono w-8 ${getTextColor(score)}`}>{score}</span>
+      <span className={`text-sm font-bold font-mono w-8 ${getTextColor(percentage)}`}>{clampedScore}</span>
     </div>
   );
 };

@@ -1,30 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ShieldCheck, CreditCard, Timer } from 'lucide-react';
 
 export default function CompetitiveAdvantage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const shouldReduceMotion = useReducedMotion();
 
-  if (!mounted) return <section className="py-32" />;
+  const animationProps = (xVal: number) => ({
+    initial: shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: xVal },
+    whileInView: shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 },
+  });
 
   return (
     <section className="py-32">
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          {...animationProps(-20)}
           viewport={{ once: true }}
         >
           <span className="text-primary text-xs font-bold uppercase tracking-[0.4em] mb-4 block">Performance</span>
           <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">Vantagem Competitiva Algorítmica</h2>
           <div className="space-y-6">
             {[
-              { icon: <ShieldCheck className="text-primary" />, title: 'Evidências Reais', desc: 'Não trabalhamos com suposições. Cada veredito é baseado em logs e dados transacionais históricos.' },
-              { icon: <CreditCard className="text-primary" />, title: 'Indicadores de Pagamento', desc: 'Identificamos o "Willingness to Pay" do seu público alvo através de análise de benchmarks competitivos.' },
-              { icon: <Timer className="text-primary" />, title: 'Economia de Tempo', desc: 'Reduza de 6 meses para 6 segundos o tempo necessário para invalidar ideias que não dão lucro.' }
+              { icon: <ShieldCheck aria-hidden="true" focusable={false} className="text-primary" />, title: 'Evidências Reais', desc: 'Não trabalhamos com suposições. Cada veredito é baseado em logs e dados transacionais históricos.' },
+              { icon: <CreditCard aria-hidden="true" focusable={false} className="text-primary" />, title: 'Indicadores de Pagamento', desc: 'Identificamos o "Willingness to Pay" do seu público-alvo através de análise de benchmarks competitivos.' },
+              { icon: <Timer aria-hidden="true" focusable={false} className="text-primary" />, title: 'Economia de Tempo', desc: 'Reduza de 6 meses para 6 segundos o tempo necessário para invalidar ideias que não dão lucro.' }
             ].map((item, i) => (
               <div key={i} className="flex gap-4">
                 <div className="mt-1">{item.icon}</div>
@@ -37,8 +37,7 @@ export default function CompetitiveAdvantage() {
           </div>
         </motion.div>
         <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          {...animationProps(20)}
           viewport={{ once: true }}
           className="bg-surface-card p-10 rounded-2xl border border-white/10 text-center glow-border"
         >
