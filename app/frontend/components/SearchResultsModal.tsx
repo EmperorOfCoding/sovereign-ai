@@ -13,10 +13,18 @@ import {
   DollarSign, 
   Compass, 
   Gavel, 
-  CheckCircle2 
+  CheckCircle2,
+  ShieldCheck
 } from 'lucide-react';
 import ScoreBar from './ScoreBar';
-import { AnalysisResult, ApiError } from '../types/analysis';
+import { AnalysisResult, ApiError, EvidenceType } from '../types/analysis';
+
+/** Human-readable label + colour for each evidence category */
+const EVIDENCE_TYPE_META: Record<EvidenceType, { label: string; className: string }> = {
+  RELATO_DIRETO:   { label: 'Relato Direto',   className: 'text-green-400 bg-green-400/10 border-green-400/30' },
+  FORUM_DISCUSSAO: { label: 'Fórum/Comunidade', className: 'text-sky-400 bg-sky-400/10 border-sky-400/30' },
+  DADOS_MERCADO:   { label: 'Dados de Mercado', className: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30' },
+};
 
 interface SearchResultsModalProps {
   isOpen: boolean;
@@ -228,20 +236,36 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {analysisResults.evidences.map((ev, i) => (
-                      <motion.div 
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-black/30 p-6 rounded-xl border border-white/5 hover:border-primary/20 transition-all group"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs text-primary font-mono font-bold uppercase tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">{ev.source}</span>
-                        </div>
-                        <p className="text-base text-zinc-300 italic leading-relaxed font-medium">&quot;{ev.text}&quot;</p>
-                      </motion.div>
-                    ))}
+                    {analysisResults.evidences.map((ev, i) => {
+                      const meta = EVIDENCE_TYPE_META[ev.evidenceType] ?? EVIDENCE_TYPE_META.RELATO_DIRETO;
+                      return (
+                        <motion.div 
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="bg-black/30 p-6 rounded-xl border border-white/5 hover:border-primary/20 transition-all group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs text-primary font-mono font-bold uppercase tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">{ev.source}</span>
+                            <span className={`text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${meta.className}`}>
+                              {meta.label}
+                            </span>
+                          </div>
+                          <p className="text-base text-zinc-300 italic leading-relaxed font-medium">&quot;{ev.text}&quot;</p>
+                          {ev.sourceUrl && (
+                            <a
+                              href={ev.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block mt-3 text-[0.65rem] text-zinc-500 hover:text-primary transition-colors font-mono underline underline-offset-2"
+                            >
+                              → Verificar fonte
+                            </a>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </motion.div>
 
@@ -262,11 +286,43 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
                     <h4 className="font-bold text-white uppercase text-base tracking-widest">Indicadores de Análise</h4>
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-black/20 p-8 rounded-2xl border border-white/5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start bg-black/20 p-8 rounded-2xl border border-white/5">
                     <div className="space-y-6">
                       <ScoreBar score={analysisResults.painScore} label="Intensidade da Dor" delay={0.3} />
                       <ScoreBar score={analysisResults.aiSummaryScore} label="Consistência IA" delay={0.4} />
                       <ScoreBar score={analysisResults.paymentScore} label="Viabilidade Financeira" delay={0.5} />
+
+                      {/* Data Confidence indicator */}
+                      <div className="pt-2 border-t border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-zinc-400" />
+                            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-widest">Confiança dos Dados</span>
+                          </div>
+                          <span className={`text-xs font-black font-mono ${
+                            analysisResults.dataConfidence >= 70 ? 'text-green-400' :
+                            analysisResults.dataConfidence >= 40 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>{analysisResults.dataConfidence}%</span>
+                        </div>
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${analysisResults.dataConfidence}%` }}
+                            transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${
+                              analysisResults.dataConfidence >= 70 ? 'bg-green-400' :
+                              analysisResults.dataConfidence >= 40 ? 'bg-yellow-400' : 'bg-red-400'
+                            }`}
+                          />
+                        </div>
+                        <p className="text-[0.65rem] text-zinc-600 mt-1.5">
+                          {analysisResults.dataConfidence >= 70
+                            ? 'Alta confiança: evidências diretas e volumosas'
+                            : analysisResults.dataConfidence >= 40
+                              ? 'Confiança moderada: alguns sinais diretos, parcialmente documentado'
+                              : 'Baixa confiança: dados escassos — valide manualmente antes de decidir'}
+                        </p>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
@@ -278,7 +334,7 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
                       <div className="bg-surface/40 p-5 rounded-xl border border-white/5 text-center group hover:border-primary/30 transition-all">
                         <Brain size={24} className="text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
                         <div className="text-2xl font-black text-primary font-mono">{analysisResults.aiSummaryScore}/10</div>
-                        <div className="text-[0.625rem] text-zinc-500 uppercase font-bold tracking-widest mt-1">Confiança</div>
+                        <div className="text-[0.625rem] text-zinc-500 uppercase font-bold tracking-widest mt-1">Consistência</div>
                       </div>
                       <div className="bg-surface/40 p-5 rounded-xl border border-white/5 text-center group hover:border-primary/30 transition-all">
                         <DollarSign size={24} className="text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />

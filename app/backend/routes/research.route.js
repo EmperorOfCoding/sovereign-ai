@@ -1,6 +1,7 @@
 const express = require("express");
 const rateLimiter = require("../middleware/rateLimiter");
 const { analyzeMarket } = require("../services/openrouter.service");
+const { rewriteQuery } = require("../services/query-rewriter.service");
 
 const router = express.Router();
 
@@ -34,7 +35,16 @@ function validateQuery(req, res, next) {
  */
 router.post("/research", validateQuery, rateLimiter, async (req, res) => {
   try {
-    const data = await analyzeMarket(req.validatedQuery);
+    const originalQuery = req.validatedQuery;
+
+    // Rewrite to pain-language before main analysis (non-blocking: falls back on failure)
+    const enrichedQuery = await rewriteQuery(originalQuery);
+
+    if (enrichedQuery !== originalQuery) {
+      console.debug(`[QueryRewriter] "${originalQuery.substring(0, 40)}" → "${enrichedQuery.substring(0, 60)}"`);
+    }
+
+    const data = await analyzeMarket(enrichedQuery);
     return res.json({ success: true, data });
   } catch (err) {
     const clientIp = req.headers["x-forwarded-for"] || req.ip;
@@ -44,6 +54,10 @@ router.post("/research", validateQuery, rateLimiter, async (req, res) => {
     console.error(`- RequestID: ${req.id}`);
     console.error(`- IP: ${clientIp}`);
     console.error(`- Error: ${err.message}`);
+    if (err.cause) {
+      console.error(`- Cause: ${err.cause.message || err.cause}`);
+      if (err.cause.code) console.error(`- Cause Code: ${err.cause.code}`);
+    }
     console.error(`- Stack: ${err.stack}`);
 
     return res.status(500).json({

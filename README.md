@@ -147,7 +147,7 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 
 - **OpenRouter Integration**: Connected to `anthropic/claude-sonnet-4-5` via OpenRouter for real market analysis.
 - **IP Rate Limiting**: 5 requests/IP/24h via `express-rate-limit` to protect API credits before user accounts exist.
-- **TDD**: All backend endpoints covered with Jest + Supertest (6 tests, 0 real API calls).
+- **TDD**: All backend endpoints covered with Jest + Supertest (9 tests, 0 real API calls).
 - **Advanced Interactive UI**: High-fidelity animations using `motion` (Framer Motion). Enhanced search modal, interactive roadmap with staggered reveals.
 
 ## 📝 License

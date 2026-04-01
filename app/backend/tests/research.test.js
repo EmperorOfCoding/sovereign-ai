@@ -10,19 +10,27 @@ const request = require("supertest");
 // Mock fetch before requiring the app
 global.fetch = jest.fn();
 
+// Mock query-rewriter so route tests stay isolated from LLM calls
+jest.mock("../services/query-rewriter.service", () => ({
+  rewriteQuery: jest.fn(async (q) => q), // identity by default
+}));
+const { rewriteQuery } = require("../services/query-rewriter.service");
+
 // Set required env vars before loading app
 process.env.OPENROUTER_API_KEY = "test-key";
 process.env.RATE_LIMIT_MAX = "3";
 process.env.RATE_LIMIT_WINDOW_HOURS = "24";
+process.env.TRUST_PROXY = "1";
 
 const app = require("../index");
 
 const MOCK_SUCCESS_RESPONSE = {
   evidences: [
-    { source: "Reddit", text: "Pain signal detected in the market." },
-    { source: "Twitter", text: "Users frustrated with existing tools." },
-    { source: "Reclame Aqui", text: "Support gap for small businesses." },
+    { source: "Reddit r/smallbusiness", sourceUrl: "https://www.reddit.com/r/smallbusiness/comments/abc123", text: "Pain signal detected in the market.", evidenceType: "RELATO_DIRETO" },
+    { source: "Twitter", sourceUrl: "https://twitter.com/user/status/123456789", text: "Users frustrated with existing tools.", evidenceType: "FORUM_DISCUSSAO" },
+    { source: "Reclame Aqui", sourceUrl: "https://www.reclameaqui.com.br/empresa/reclamacao-123", text: "Support gap for small businesses.", evidenceType: "DADOS_MERCADO" },
   ],
+  dataConfidence: 72,
   painScore: 8,
   aiSummaryScore: 7,
   paymentScore: 6,
@@ -33,7 +41,7 @@ const MOCK_SUCCESS_RESPONSE = {
     "Test willingness to pay via pricing experiments.",
   ],
   verdict: "VÁLIDO",
-  verdictReason: "Strong pain signal with real evidence. Moderate payment willingness. Recommend proceeding to validation.",
+  verdictReason: "Strong pain signal with real evidence (confidence: 72%). Moderate payment willingness. Recommend proceeding to validation.",
 };
 
 function mockFetchSuccess() {
@@ -58,6 +66,8 @@ const TEST_IPS = {
 describe("POST /api/research", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: rewriter is transparent (returns original query)
+    rewriteQuery.mockImplementation(async (q) => q);
   });
 
   test("1. Valid query returns 200 with structured data", async () => {
@@ -87,7 +97,7 @@ describe("POST /api/research", () => {
       "Content-Type": "application/json",
     });
     const body = JSON.parse(options.body);
-    expect(body.model).toBe("anthropic/claude-sonnet-4.5");
+    expect(body.model).toBe("anthropic/claude-sonnet-4.6");
     expect(body.messages[1].content).toContain("SaaS para logística no Brasil");
   });
 
@@ -139,6 +149,8 @@ describe("POST /api/research", () => {
 
     expect(res.status).toBe(429);
     expect(res.body.error).toBe("RATE_LIMIT_EXCEEDED");
+    expect(res.body.retryAfter).toBeGreaterThan(0);
+    expect(typeof res.body.retryAfter).toBe("number");
   });
 
   test("6. OpenRouter API failure returns 500", async () => {
@@ -155,5 +167,52 @@ describe("POST /api/research", () => {
 
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("ANALYSIS_FAILED");
+  });
+
+  test("7. Incoherent result (painScore > 4 + dataConfidence < 40) returns 500", async () => {
+    // Simulates the original bug: AI returns painScore=5 with only scarce evidence (cap is now 4)
+    const incoherentResponse = {
+      ...MOCK_SUCCESS_RESPONSE,
+      dataConfidence: 25,   // low confidence
+      painScore: 5,         // above the new cap of 4 for confidence < 40
+      verdict: "INVÁLIDO", // adjust verdict to avoid the pain+confidence VALID threshold
+    };
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify(incoherentResponse) } }],
+      }),
+    });
+
+    const res = await request(app)
+      .post("/api/research")
+      .set("X-Forwarded-For", "10.0.0.7")
+      .send({ query: "market with sparse data" });
+
+    // Validator must reject: painScore=5 with dataConfidence=25 violates the < 40 cap
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe("ANALYSIS_FAILED");
+  });
+
+  test("8. Rewritten query (pain language) is passed to main analysis model", async () => {
+    // Arrange: rewriter returns an enriched query
+    rewriteQuery.mockResolvedValueOnce("é difícil agendar consulta pelo whatsapp");
+    mockFetchSuccess();
+
+    // Act
+    const res = await request(app)
+      .post("/api/research")
+      .set("X-Forwarded-For", "10.0.0.8")
+      .send({ query: "agendamento manual clinica whatsapp" });
+
+    // Assert: route succeeds
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // Assert: the enriched query (not the original) was forwarded to OpenRouter
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.messages[1].content).toContain("é difícil agendar consulta pelo whatsapp");
+    expect(body.messages[1].content).not.toContain("agendamento manual clinica whatsapp");
   });
 });
