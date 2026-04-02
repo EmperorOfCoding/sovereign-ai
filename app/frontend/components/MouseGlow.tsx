@@ -32,7 +32,7 @@ const MouseGlow = () => {
         width: '600px',
         height: '600px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(51, 255, 0, 0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(51, 255, 0, 0.04) 0%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 40,
         x,

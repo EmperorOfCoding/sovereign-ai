@@ -27,8 +27,8 @@ export default function Hero() {
     }
   };
 
-  const videoUrl = process.env.NEXT_PUBLIC_MUX_VIDEO_URL || 
-    "https://player.mux.com/jZJwlj2JLC79VyxbQ61ORYe8n45xC1cFt82gvABrWeM?metadata-video-title=Validate+Idea+AI+Video&video-title=Validate+Idea+AI+Video&autoplay=autoplay&loop=loop&muted&playsinline";
+  const videoUrl = process.env.NEXT_PUBLIC_MUX_VIDEO_URL ||
+    "https://player.mux.com/jZJwlj2JLC79VyxbQ61ORYe8n45xC1cFt82gvABrWeM?metadata-video-title=Validate+Idea+AI+Video&video-title=Validate+Idea+AI+Video&autoplay=true&loop=true&muted=true&playsinline=true";
 
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-screen flex flex-col items-center justify-center text-center">
@@ -50,7 +50,7 @@ export default function Hero() {
       </div>
 
       <div className="max-w-4xl relative z-10">
-        <motion.h1 
+        <motion.h1
           variants={{
             hidden: { opacity: 1 },
             visible: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.2 } }
@@ -79,8 +79,8 @@ export default function Hero() {
             </motion.span>
           ))}
         </motion.h1>
-        
-        <motion.p 
+
+        <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: [0, 1, 0, 1] }}
           viewport={{ once: true }}
@@ -89,25 +89,25 @@ export default function Hero() {
         >
           Tome decisões inteligentes baseadas em dados reais
         </motion.p>
-        
+
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 2.6, duration: 0.8 }}
-           className="mb-20 mx-auto w-fit"
-         >
-           <MagneticButton
-             onClick={scrollToSearch}
-             className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 cursor-pointer"
-             strength={0.4}
-           >
-             Começar Agora
-             <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-           </MagneticButton>
-         </motion.div>
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.6, duration: 0.8 }}
+          className="mb-20 mx-auto w-fit"
+        >
+          <MagneticButton
+            onClick={scrollToSearch}
+            className="group relative flex items-center gap-2 bg-primary text-black px-10 py-4 font-bold rounded glow-primary hover:bg-[#2ee600] hover:shadow-[0_0_30px_rgba(51,255,0,0.4)] active:scale-95 transition-all duration-300 cursor-pointer"
+            strength={0.4}
+          >
+            Começar Agora
+            <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+          </MagneticButton>
+        </motion.div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
@@ -129,16 +129,24 @@ export default function Hero() {
             <Search size={22} className="text-primary shrink-0 hidden sm:block delay-0 transition-all opacity-90" />
             <div className="flex-1 w-full border border-white/10 focus-within:border-white/30 transition-colors h-14 flex items-center bg-black/20">
               <Search size={20} className="text-primary ml-4 shrink-0 sm:hidden" />
-              <input 
-                id="search-input"
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Descreva um problema que você quer resolver ou uma solução que quer validar no mercado..."
-                autoComplete="off"
-                aria-label="Pesquisar problema ou solução para validar"
-                className="w-full bg-transparent text-zinc-300 text-sm md:text-base outline-none px-4 placeholder:text-zinc-600 h-full font-mono flex-1"
-              />
+              <div className="flex-1 relative h-full flex items-center terminal-input-wrapper">
+                <input
+                  id="search-input"
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Descreva um problema..."
+                  autoComplete="off"
+                  className="w-full bg-transparent text-zinc-300 text-sm md:text-base outline-none px-4 placeholder:text-zinc-600 h-full font-mono flex-1 terminal-input"
+                />
+                <div 
+                  className="terminal-cursor" 
+                  style={{ 
+                    left: `calc(1rem + ${query.length}ch)`,
+                    display: query.length >= 50 ? 'none' : 'block'
+                  }} 
+                />
+              </div>
             </div>
             <MagneticButton
               type="submit"
@@ -150,7 +158,7 @@ export default function Hero() {
               <span className="text-xs text-primary group-hover:text-black uppercase font-bold tracking-widest mt-0.5 transition-colors duration-300">Deep Research</span>
             </MagneticButton>
           </form>
-          
+
           <div className="space-y-4 font-mono pl-0 sm:pl-[2.35rem]">
             <div className="flex items-center gap-3 text-sm md:text-base">
               <CheckCircle2 size={18} className="text-primary" />

@@ -1,23 +1,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
-@layer base {
-  :root {
-    --color-primary: #33FF00;
-    --color-surface: #0A0A0A;
-    --color-surface-alt: #111111;
-    --color-surface-card: #141414;
-    --color-border-subtle: rgba(255, 255, 255, 0.06);
-    --color-primary-glow: rgba(51, 255, 0, 0.15);
-  }
+/* Modern CSS Reset & Base */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { 
+  text-rendering: optimizeLegibility; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-surface);
+  color: white;
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
 
-  body {
-    @apply bg-surface text-white antialiased;
-    font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  }
+img, picture, video, canvas, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; }
+p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
+
+:root {
+  --color-primary: #33FF00;
+  --color-surface: #0A0A0A;
+  --color-surface-alt: #111111;
+  --color-surface-card: #141414;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-primary-glow: rgba(51, 255, 0, 0.15);
+
+  /* Modal z-index layers */
+  --z-backdrop: 9998;
+  --z-modal: 9999;
 }
 
 @layer utilities {
@@ -142,5 +157,48 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(51, 255, 0, 0.4);
+  }
+
+  /* Terminal-style input cursor */
+  .terminal-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .terminal-input {
+    caret-color: transparent !important;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    width: 100%;
+  }
+
+  .terminal-input-wrapper:focus-within .terminal-input {
+    caret-color: transparent !important;
+  }
+
+  .terminal-input::selection {
+    background-color: var(--color-primary);
+    color: var(--color-surface);
+  }
+
+  /* Cursor simulation */
+  .terminal-cursor {
+    position: absolute;
+    width: 0.6em;
+    height: 1.25em;
+    background-color: var(--color-primary);
+    pointer-events: none;
+    animation: blink 1s step-end infinite;
+    top: 50%;
+    transform: translateY(-50%);
+    mix-blend-mode: difference;
+    border-radius: 0.0625rem;
+    z-index: 10;
+  }
+
+  .terminal-input:not(:focus) + .terminal-cursor {
+    display: none;
   }
 }

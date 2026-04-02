@@ -12,11 +12,15 @@ import {
   Cpu, 
   DollarSign, 
   Compass, 
-  CheckCircle2 
+  CheckCircle2,
+  ExternalLink,
+  FileSearch,
+  MessagesSquare,
+  Calendar
 } from 'lucide-react';
 import ScoreBar from './ScoreBar';
 import Verdict from './Verdict';
-import { AnalysisResult, ApiError } from '../types/analysis';
+import { AnalysisResult, ApiError, RawEvidence } from '../types/analysis';
 
 const getFocusableElements = (container: HTMLElement) => {
   return Array.from(
@@ -25,6 +29,29 @@ const getFocusableElements = (container: HTMLElement) => {
     )
   ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
 };
+
+/**
+ * Formats an ISO date string into a human-readable pt-BR format.
+ * Detects whether the date is an original publication date or a collection timestamp
+ * (same-day as now) and labels accordingly.
+ */
+function formatEvidenceDate(isoDate?: string): string {
+  if (!isoDate) return '';
+  try {
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) return '';
+    const now = new Date();
+    const isCollected = date.toDateString() === now.toDateString();
+    const formatted = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    return isCollected ? `Coletado em ${formatted}` : formatted;
+  } catch {
+    return '';
+  }
+}
 
 interface SearchResultsModalProps {
   isOpen: boolean;
@@ -301,7 +328,131 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
             {/* Results */}
             {!isLoading && !apiError && analysisResults && (
               <div ref={contentRef} className="p-8 space-y-10 overflow-y-auto max-h-[75vh] custom-scrollbar">
-                
+
+                {/* 0. Sinais Reais do Mercado (Tavily) */}
+                {analysisResults.rawEvidences && analysisResults.rawEvidences.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0 }}
+                    className="space-y-4"
+                  >
+                    {/* Section header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-[hsl(220,90%,60%)]/10 rounded-lg">
+                        <FileSearch size={22} className="text-[hsl(220,90%,60%)]"></FileSearch>
+                      </div>
+                      <h4 className="font-bold text-white uppercase text-base tracking-widest">Sinais Reais do Mercado</h4>
+                      <span className="text-xs text-[hsl(220,90%,60%)] bg-[hsl(220,90%,60%)]/10 border border-[hsl(220,90%,60%)]/20 px-3 py-1 rounded-full font-mono font-bold">
+                        {analysisResults.rawEvidences.length} fontes rastreáveis
+                      </span>
+                    </div>
+
+                    {/* Complaints group */}
+                    {analysisResults.rawEvidences.filter((ev: RawEvidence) => ev.type === 'complaint').length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessagesSquare size={15} className="text-[hsl(0,75%,60%)]"></MessagesSquare>
+                          <span className="text-xs font-bold uppercase tracking-widest text-[hsl(0,75%,60%)]">Reclamações de Usuários</span>
+                          <span className="text-[0.6rem] font-mono bg-[hsl(0,75%,60%)]/10 text-[hsl(0,75%,60%)] border border-[hsl(0,75%,60%)]/20 px-2 py-0.5 rounded-full">
+                            {analysisResults.rawEvidences.filter((ev: RawEvidence) => ev.type === 'complaint').length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {analysisResults.rawEvidences
+                            .filter((ev: RawEvidence) => ev.type === 'complaint')
+                            .map((ev: RawEvidence, i: number) => (
+                              <motion.div
+                                key={ev.url}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.07 }}
+                                className="bg-[hsl(0,75%,60%)]/5 border border-[hsl(0,75%,60%)]/15 rounded-xl p-5 hover:border-[hsl(0,75%,60%)]/35 transition-all group"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[0.65rem] font-mono font-bold uppercase tracking-tight text-[hsl(0,75%,65%)] opacity-80 group-hover:opacity-100">
+                                    {ev.source}
+                                  </span>
+                                  <a
+                                    href={ev.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Abrir fonte: ${ev.source}`}
+                                    className="text-[hsl(0,75%,60%)] opacity-40 group-hover:opacity-100 transition-opacity hover:scale-110"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <ExternalLink size={13} />
+                                  </a>
+                                </div>
+                                <p className="text-sm text-zinc-300 leading-relaxed italic">&quot;{ev.text}&quot;</p>
+                                {formatEvidenceDate(ev.publishedDate) && (
+                                  <div className="flex items-center gap-1.5 mt-3 text-[0.6rem] text-zinc-500 font-mono">
+                                    <Calendar size={10} className="opacity-60" />
+                                    <span>{formatEvidenceDate(ev.publishedDate)}</span>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Research group */}
+                    {analysisResults.rawEvidences.filter((ev: RawEvidence) => ev.type === 'research').length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp size={15} className="text-[hsl(190,85%,50%)]"></TrendingUp>
+                          <span className="text-xs font-bold uppercase tracking-widest text-[hsl(190,85%,50%)]">Pesquisas & Dados de Mercado</span>
+                          <span className="text-[0.6rem] font-mono bg-[hsl(190,85%,50%)]/10 text-[hsl(190,85%,50%)] border border-[hsl(190,85%,50%)]/20 px-2 py-0.5 rounded-full">
+                            {analysisResults.rawEvidences.filter((ev: RawEvidence) => ev.type === 'research').length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {analysisResults.rawEvidences
+                            .filter((ev: RawEvidence) => ev.type === 'research')
+                            .map((ev: RawEvidence, i: number) => (
+                              <motion.div
+                                key={ev.url}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.07 }}
+                                className="bg-[hsl(190,85%,50%)]/5 border border-[hsl(190,85%,50%)]/15 rounded-xl p-5 hover:border-[hsl(190,85%,50%)]/35 transition-all group"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[0.65rem] font-mono font-bold uppercase tracking-tight text-[hsl(190,85%,55%)] opacity-80 group-hover:opacity-100">
+                                    {ev.source}
+                                  </span>
+                                  <a
+                                    href={ev.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Abrir fonte: ${ev.source}`}
+                                    className="text-[hsl(190,85%,50%)] opacity-40 group-hover:opacity-100 transition-opacity hover:scale-110"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <ExternalLink size={13} />
+                                  </a>
+                                </div>
+                                <p className="text-sm text-zinc-300 leading-relaxed italic">&quot;{ev.text}&quot;</p>
+                                {formatEvidenceDate(ev.publishedDate) && (
+                                  <div className="flex items-center gap-1.5 mt-3 text-[0.6rem] text-zinc-500 font-mono">
+                                    <Calendar size={10} className="opacity-60" />
+                                    <span>{formatEvidenceDate(ev.publishedDate)}</span>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Divider */}
+                {analysisResults.rawEvidences && analysisResults.rawEvidences.length > 0 && (
+                  <div className="border-t border-white/5" />
+                )}
+
                 {/* 1. Evidências Encontradas */}
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }} 
