@@ -30,7 +30,7 @@ const ScoreBar = ({ score, maxScore = 10, label, delay = 0 }: { score: number; m
           className={`h-full rounded-full ${getColor(percentage)}`}
         />
       </div>
-      <span className={`text-sm font-bold font-mono w-8 ${getTextColor(percentage)}`}>{score}</span>
+      <span className={`text-sm font-bold font-mono w-8 ${getTextColor(percentage)}`}>{clampedScore}</span>
     </div>
   );
 };

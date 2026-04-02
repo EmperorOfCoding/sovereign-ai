@@ -13,7 +13,7 @@ export default function CTA() {
   };
 
   const handleDemo = () => {
-    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank'); // Placeholder demo
+    window.open('https://demo.sovereign-ai.com', '_blank', 'noopener,noreferrer');
   };
 
   return (

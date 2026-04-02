@@ -149,10 +149,11 @@ describe("POST /api/research", () => {
     // First 3 succeed (RATE_LIMIT_MAX=3 in test env)
     for (let i = 0; i < 3; i++) {
       mockFetchSuccess();
-      await request(app)
+      const res = await request(app)
         .post("/api/research")
         .set("X-Forwarded-For", TEST_IPS.rateLimit)
         .send({ query: "test query" });
+      expect(res.status).toBe(200);
     }
 
     // 4th request should be rate limited

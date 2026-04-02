@@ -140,7 +140,8 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 ### Frontend Architecture
 
 - **CSS Architecture**: CSS Variables for all colors defined in `globals.css`.
-- **Landing Page**: `app/page.tsx` is a Client Component. The `SearchResultsModal` calls the backend API and handles real AI responses, rate-limit errors, and network failures.
+- **Landing Page**: `app/page.tsx` is a Server Component that composes high-fidelity client sections. The `SearchResultsModal` (client) calls the backend API and handles real AI responses, rate-limit errors, and network failures.
+
 - **Typography**: `Space Grotesk` via `next/font/google` to prevent layout shift.
 
 ### Recent Enhancements (March 2026)
@@ -149,6 +150,13 @@ To prevent VS Code from unnecessarily parsing `node_modules`, we maintain `jscon
 - **IP Rate Limiting**: 5 requests/IP/24h via `express-rate-limit` to protect API credits before user accounts exist.
 - **TDD**: All backend endpoints covered with Jest + Supertest (6 tests, 0 real API calls).
 - **Advanced Interactive UI**: High-fidelity animations using `motion` (Framer Motion). Enhanced search modal, interactive roadmap with staggered reveals.
+- **Accessibility & UX Fixes (April 2026)**:
+  - **Focus Management**: Implemented full focus trapping and restoration in `SearchResultsModal` for improved screen reader and keyboard navigation.
+  - **Enhanced Error Handling**: Improved 400 status error parsing to display specific backend error messages in the UI.
+  - **Reduced Motion Support**: Optimized `Verdict` progress ring animations to respect system `prefers-reduced-motion` settings.
+- **Sentry Monitoring Refactoring**:
+  - Centralized traces sample rate normalization into a shared utility.
+  - Fixed client-side Sentry configuration to correctly use `NEXT_PUBLIC_` environment variables.
 - **UI Performance & Sequencing**: Fixed issues where primary CTA buttons would appear before the page content was fully animated/loaded by implementing sequenced entrance animations.
 - **Turbopack Integration**: Enabled Next.js Turbopack for local development, reducing start times and HMR (Hot Module Replacement) latency.
 
@@ -162,11 +170,11 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 ## 👥 Team
 
-- [Your Name/Team Name]
+- Empiricus
 
 ## 📞 Contact
 
-For questions or support, please contact [suporte@sovereign-ai.com](mailto:suporte@sovereign-ai.com).
+For questions or support, please contact [suporte@sovereign-ai.com](victorameno@hotmail.com).
 
 ## 💡 Acknowledgments
 

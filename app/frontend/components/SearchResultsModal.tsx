@@ -18,6 +18,14 @@ import ScoreBar from './ScoreBar';
 import Verdict from './Verdict';
 import { AnalysisResult, ApiError } from '../types/analysis';
 
+const getFocusableElements = (container: HTMLElement) => {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
+};
+
 interface SearchResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,6 +38,9 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
   const [apiError, setApiError] = useState<ApiError>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   
   // Stabilize query on open
   const queryOnOpenRef = useRef(query);
@@ -39,6 +50,11 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
 
     // Capture the current query value only when the modal opens
     queryOnOpenRef.current = query;
+
+    const clearAllTimeouts = () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+    };
 
     // Reset state
     setStep(0);
@@ -50,6 +66,8 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
     const t1 = setTimeout(() => { setStep(1); setLoadingText('Analisando sinais de dor...'); }, 1500);
     const t2 = setTimeout(() => { setStep(2); setLoadingText('Processando evidências...'); }, 3000);
     const t3 = setTimeout(() => { setStep(3); setLoadingText('Calculando indicadores...'); }, 4500);
+    
+    timeoutsRef.current.push(t1, t2, t3);
 
     // Fetch from backend
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
@@ -62,8 +80,22 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
       signal: controller.signal,
     })
       .then(async (res) => {
+        clearAllTimeouts();
+        
         if (res.status === 429) {
           setApiError('RATE_LIMIT_EXCEEDED');
+          setStep(4);
+          return;
+        }
+
+        if (res.status === 400) {
+          try {
+            const errorBody = await res.json();
+            // Map backend error codes to UI tokens if needed, or use them directly if they match
+            setApiError(errorBody.error || 'INVALID_INPUT');
+          } catch {
+            setApiError('INVALID_INPUT');
+          }
           setStep(4);
           return;
         }
@@ -89,24 +121,61 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
         }
       })
       .catch((err) => {
+        clearAllTimeouts();
         if (err.name === 'AbortError') return;
         setApiError('ANALYSIS_FAILED');
         setStep(4);
       });
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearAllTimeouts();
       controller.abort();
     };
   }, [isOpen]); // Only depend on isOpen to prevent re-fetches when query changes while open
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+    if (!isOpen) return;
+
+    const previousActiveElement = document.activeElement as HTMLElement;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      
+      if (e.key === 'Tab') {
+        if (!modalRef.current) return;
+        const focusableElements = getFocusableElements(modalRef.current);
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    if (closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+        previousActiveElement.focus();
+      }
+    };
+  }, [isOpen, onClose]);
 
   const isLoading = step < 4;
 
@@ -121,6 +190,10 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
           className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-12 md:pt-20 text-left overflow-y-auto"
         >
           <motion.div 
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
             initial={{ opacity: 0, scale: 0.95, y: 30 }} 
             animate={{ opacity: 1, scale: 1, y: 0 }} 
             exit={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -129,11 +202,16 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
           >
             {/* Header */}
             <div className="flex justify-between items-center p-8 border-b border-white/5 sticky top-0 bg-surface-card z-10">
-              <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+              <h3 id="modal-title" className="text-2xl font-bold text-white flex items-center gap-3">
                 <Brain size={28} className="text-primary" />
                 Análise Sovereign AI
               </h3>
-              <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors cursor-pointer p-2 bg-white/5 rounded-full">
+              <button 
+                ref={closeButtonRef}
+                onClick={onClose} 
+                aria-label="Fechar modal"
+                className="text-zinc-400 hover:text-white transition-colors cursor-pointer p-2 bg-white/5 rounded-full"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -188,6 +266,19 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
                     </div>
                     <button onClick={onClose} className="mt-2 px-8 py-3 border border-white/10 rounded-xl text-zinc-400 hover:text-white hover:border-white/20 transition-all cursor-pointer text-sm font-bold uppercase tracking-widest">
                       Entendido
+                    </button>
+                  </div>
+                ) : apiError === 'INVALID_INPUT' ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+                    <div className="p-4 bg-orange-500/10 rounded-full border border-orange-500/20">
+                      <AlertCircle size={36} className="text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-orange-500 mb-2">Entrada Inválida</p>
+                      <p className="text-zinc-400">A sua pesquisa parece ser muito curta ou contém caracteres inválidos. Tente ser mais descritivo.</p>
+                    </div>
+                    <button onClick={onClose} className="mt-2 px-8 py-3 border border-white/10 rounded-xl text-zinc-400 hover:text-white hover:border-white/20 transition-all cursor-pointer text-sm font-bold uppercase tracking-widest">
+                      Corrigir Pesquisa
                     </button>
                   </div>
                 ) : (
