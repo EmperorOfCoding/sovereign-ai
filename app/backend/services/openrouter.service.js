@@ -10,8 +10,10 @@
  * - top_p: 1, frequency_penalty: 0 (defaults, not adding extra tokens)
  */
 
+const { rewriteQuery } = require("./query-rewriter.service");
+
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "anthropic/claude-sonnet-4.5";
+const MODEL = "anthropic/claude-sonnet-4.6";
 const OPENROUTER_TIMEOUT_MS = 30000; // 30 seconds
 
 const SYSTEM_PROMPT = `You are a market research analyst. Respond ONLY with a valid JSON object — no markdown, no explanation.
@@ -42,11 +44,15 @@ async function analyzeMarket(query) {
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured");
 
   const isDebug = process.env.LOG_LEVEL === "debug";
+
+  // 1. REWRITE THE QUERY (CHEAP MODEL)
+  const rewritten = await rewriteQuery(query);
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
   if (isDebug) {
-    console.log(`[OpenRouter] → Sending request | model: ${MODEL} | query length: ${query.length}`);
+    console.log(`[OpenRouter] → Sending request | model: ${MODEL} | query: "${rewritten}" (was "${query}")`);
   }
 
   try {
@@ -63,7 +69,7 @@ async function analyzeMarket(query) {
         model: MODEL,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Analyze this market: "${query}"` },
+          { role: "user", content: `Analyze this market: "${rewritten}"` },
         ],
         max_tokens: 700,
         temperature: 0,

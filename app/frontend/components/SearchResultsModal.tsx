@@ -18,6 +18,14 @@ import ScoreBar from './ScoreBar';
 import Verdict from './Verdict';
 import { AnalysisResult, ApiError } from '../types/analysis';
 
+const getFocusableElements = (container: HTMLElement) => {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
+};
+
 interface SearchResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -81,7 +89,13 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
         }
 
         if (res.status === 400) {
-          setApiError('INVALID_INPUT');
+          try {
+            const errorBody = await res.json();
+            // Map backend error codes to UI tokens if needed, or use them directly if they match
+            setApiError(errorBody.error || 'INVALID_INPUT');
+          } catch {
+            setApiError('INVALID_INPUT');
+          }
           setStep(4);
           return;
         }
@@ -120,14 +134,47 @@ const SearchResultsModal = ({ isOpen, onClose, query }: SearchResultsModalProps)
   }, [isOpen]); // Only depend on isOpen to prevent re-fetches when query changes while open
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handleEsc);
+    if (!isOpen) return;
+
+    const previousActiveElement = document.activeElement as HTMLElement;
     
-    if (isOpen && closeButtonRef.current) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      
+      if (e.key === 'Tab') {
+        if (!modalRef.current) return;
+        const focusableElements = getFocusableElements(modalRef.current);
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    if (closeButtonRef.current) {
       closeButtonRef.current.focus();
     }
 
-    return () => window.removeEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+        previousActiveElement.focus();
+      }
+    };
   }, [isOpen, onClose]);
 
   const isLoading = step < 4;

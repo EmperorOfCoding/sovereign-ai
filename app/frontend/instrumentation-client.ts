@@ -1,13 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
+import { normalizeTracesSampleRate } from "./lib/sentry-utils";
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Percentage of transactions captured for performance monitoring
-  tracesSampleRate: (() => {
-    const rate = parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1");
-    return Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0.1;
-  })(),
+  tracesSampleRate: normalizeTracesSampleRate(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE, 0.1),
 
   // Percentage of sessions recorded for session replay
   replaysSessionSampleRate: 0.1,

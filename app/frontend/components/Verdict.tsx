@@ -75,11 +75,11 @@ export default function Verdict({
                   strokeWidth="6"
                   className="text-primary drop-shadow-[0_0_8px_rgba(51,255,0,0.5)]"
                   strokeDasharray="345.6"
-                  initial={{ strokeDashoffset: 345.6 }}
+                  initial={shouldReduceMotion ? { strokeDashoffset } : { strokeDashoffset: 345.6 }}
                   whileInView={!shouldReduceMotion ? { strokeDashoffset } : undefined}
                   viewport={{ once: true }}
-                  animate={shouldReduceMotion ? { strokeDashoffset } : undefined}
-                  transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
+                  animate={undefined}
+                  transition={!shouldReduceMotion ? { duration: 1.5, ease: "easeOut", delay: 0.6 } : undefined}
                   strokeLinecap="round"
                 />
               </svg>
