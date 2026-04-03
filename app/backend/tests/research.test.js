@@ -1,11 +1,21 @@
 /**
  * Tests for POST /api/research
  * TDD: RED → GREEN → REFACTOR
- * 
- * Mocks fetch globally so no real API calls are made during tests.
+ *
+ * Strategy:
+ * - global.fetch is mocked to cover the query-rewriter (cheap model) and OpenRouter calls
+ * - @tavily/core is module-mocked so no real Tavily HTTP calls are made
  */
 
 const request = require("supertest");
+
+// ── Module mock: Tavily SDK ────────────────────────────────────────────────
+// Must be hoisted before any require() of the app or services
+jest.mock("@tavily/core", () => ({
+  tavily: jest.fn(() => ({
+    search: jest.fn().mockResolvedValue({ results: [] }),
+  })),
+}));
 
 let app;
 let originalEnv;
@@ -16,11 +26,12 @@ beforeAll(() => {
   originalEnv = { ...process.env };
   originalFetch = global.fetch;
 
-  // Mock fetch
+  // Mock fetch (covers query-rewriter + OpenRouter calls)
   global.fetch = jest.fn();
 
   // Set required env vars
   process.env.OPENROUTER_API_KEY = "test-key";
+  process.env.TAVILY_API_KEY = "test-tavily-key";
   process.env.RATE_LIMIT_MAX = "3";
   process.env.RATE_LIMIT_WINDOW_HOURS = "24";
   process.env.TRUST_PROXY = "1";
@@ -36,7 +47,7 @@ afterAll(() => {
   global.fetch = originalFetch;
 });
 
-const MOCK_SUCCESS_RESPONSE = {
+const MOCK_AI_RESPONSE = {
   evidences: [
     { source: "Reddit", text: "Pain signal detected in the market." },
     { source: "Twitter", text: "Users frustrated with existing tools." },
@@ -55,25 +66,53 @@ const MOCK_SUCCESS_RESPONSE = {
   verdictReason: "Strong pain signal with real evidence. Moderate payment willingness. Recommend proceeding to validation.",
 };
 
+/**
+ * Creates a mock AI response object for fetch.
+ * @param {object} responseData - The AI response data to return
+ * @returns {object} Mock fetch response
+ */
+function makeMockAIResponse(responseData) {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: (name) => (name.toLowerCase() === "content-type" ? "application/json" : null) },
+    json: async () => ({
+      choices: [{ message: { content: JSON.stringify(responseData) } }],
+    }),
+  };
+}
+
+/**
+ * Mocks the full fetch pipeline for the primary model path:
+ *  1st call → query-rewriter (returns rewritten query text)
+ *  2nd call → OpenRouter primary model (returns AI analysis JSON)
+ */
 function mockFetchSuccess() {
+  // Mock 1: query-rewriter response
   global.fetch.mockResolvedValueOnce({
     ok: true,
     status: 200,
-    headers: { get: (name) => (name.toLowerCase() === 'content-type' ? 'application/json' : null) },
+    headers: { get: () => "application/json" },
     json: async () => ({
-      choices: [{ message: { content: JSON.stringify(MOCK_SUCCESS_RESPONSE) } }],
+      choices: [{ message: { content: "SaaS para logística no Brasil" } }],
     }),
   });
+
+  // Mock 2: OpenRouter primary model (Gemini) analysis response
+  global.fetch.mockResolvedValueOnce(makeMockAIResponse(MOCK_AI_RESPONSE));
 }
 
 // Each test group uses a unique IP to avoid rate limit cross-contamination
 const TEST_IPS = {
-  valid: '10.0.0.1',
-  emptyQuery: '10.0.0.2',
-  missingQuery: '10.0.0.3',
-  longQuery: '10.0.0.4',
-  rateLimit: '10.0.0.5',
-  apiError: '10.0.0.6',
+  valid: "10.0.0.1",
+  emptyQuery: "10.0.0.2",
+  missingQuery: "10.0.0.3",
+  longQuery: "10.0.0.4",
+  rateLimit: "10.0.0.5",
+  apiError: "10.0.0.6",
+  tavilyFallback: "10.0.0.7",
+  rawEvidences: "10.0.0.8",
+  geminiFallback: "10.0.0.9",
 };
 
 describe("POST /api/research", () => {
@@ -81,7 +120,7 @@ describe("POST /api/research", () => {
     jest.clearAllMocks();
   });
 
-  test("1. Valid query returns 200 with structured data", async () => {
+  test("1. Valid query returns 200 with structured data (primary model: Gemini)", async () => {
     mockFetchSuccess();
 
     const res = await request(app)
@@ -90,7 +129,7 @@ describe("POST /api/research", () => {
       .send({ query: "SaaS para logística no Brasil" });
 
     if (res.status !== 200) {
-      console.log('DEBUG FAIL:', res.status, JSON.stringify(res.body, null, 2));
+      console.log("DEBUG FAIL:", res.status, JSON.stringify(res.body, null, 2));
     }
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -101,18 +140,25 @@ describe("POST /api/research", () => {
       nextSteps: expect.any(Array),
     });
 
-    // Verify fetch was called with correct parameters
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
-    expect(options.method).toBe("POST");
-    expect(options.headers).toMatchObject({
+    // With the 3-step pipeline, fetch is called twice: rewriter + primary model
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    // 1st call: Rewriter
+    const [rewriterUrl, rewriterOptions] = global.fetch.mock.calls[0];
+    expect(rewriterUrl).toBe("https://openrouter.ai/api/v1/chat/completions");
+    const rewriterBody = JSON.parse(rewriterOptions.body);
+    expect(rewriterBody.model).toBe("google/gemini-2.0-flash-lite-001");
+
+    // 2nd call: OpenRouter Analysis (primary model = Gemini 2.5 Flash)
+    const [analysisUrl, analysisOptions] = global.fetch.mock.calls[1];
+    expect(analysisUrl).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(analysisOptions.method).toBe("POST");
+    expect(analysisOptions.headers).toMatchObject({
       Authorization: "Bearer test-key",
       "Content-Type": "application/json",
     });
-    const body = JSON.parse(options.body);
-    expect(body.model).toBe("anthropic/claude-sonnet-4.5");
-    expect(body.messages[1].content).toContain("SaaS para logística no Brasil");
+    const analysisBody = JSON.parse(analysisOptions.body);
+    expect(analysisBody.model).toBe("google/gemini-2.5-flash");
   });
 
   test("2. Empty query returns 400 validation error", async () => {
@@ -168,10 +214,26 @@ describe("POST /api/research", () => {
     expect(typeof res.body.retryAfter).toBe("number");
   });
 
-  test("6. OpenRouter API failure returns 500", async () => {
+  test("6. OpenRouter API failure (both models) returns 500", async () => {
+    // Rewriter succeeds
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({ choices: [{ message: { content: "query reescrita" } }] }),
+    });
+    // Primary model (Gemini) fails
     global.fetch.mockResolvedValueOnce({
       ok: false,
       status: 503,
+      headers: { get: () => null },
+      text: async () => "Service Unavailable",
+    });
+    // Fallback model (Claude) also fails
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      headers: { get: () => null },
       text: async () => "Service Unavailable",
     });
 
@@ -180,8 +242,76 @@ describe("POST /api/research", () => {
       .set("X-Forwarded-For", TEST_IPS.apiError)
       .send({ query: "valid market question" });
 
-    if (res.status !== 500) console.log('DEBUG FAIL 6:', res.status, res.body);
+    if (res.status !== 500) console.log("DEBUG FAIL 6:", res.status, res.body);
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("ANALYSIS_FAILED");
+  });
+
+  test("7. rawEvidences field is present in successful 200 response", async () => {
+    mockFetchSuccess();
+
+    const res = await request(app)
+      .post("/api/research")
+      .set("X-Forwarded-For", TEST_IPS.rawEvidences)
+      .send({ query: "app de gestão financeira para autônomos" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveProperty("rawEvidences");
+    expect(Array.isArray(res.body.data.rawEvidences)).toBe(true);
+  });
+
+  test("8. Pipeline succeeds even if Tavily returns no results (fallback to [])", async () => {
+    // The @tavily/core mock already returns { results: [] } by default.
+    // This test verifies the pipeline completes successfully with empty rawEvidences.
+    mockFetchSuccess();
+
+    const res = await request(app)
+      .post("/api/research")
+      .set("X-Forwarded-For", TEST_IPS.tavilyFallback)
+      .send({ query: "mercado de drones para agricultura" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.rawEvidences).toEqual([]);
+  });
+
+  test("9. Gemini fails → fallback to Claude succeeds (3 fetch calls)", async () => {
+    // Mock 1: Rewriter succeeds
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({
+        choices: [{ message: { content: "problema de logística" } }],
+      }),
+    });
+
+    // Mock 2: Primary model (Gemini) fails with 500
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      headers: { get: () => null },
+      text: async () => "Internal Server Error",
+    });
+
+    // Mock 3: Fallback model (Claude) succeeds
+    global.fetch.mockResolvedValueOnce(makeMockAIResponse(MOCK_AI_RESPONSE));
+
+    const res = await request(app)
+      .post("/api/research")
+      .set("X-Forwarded-For", TEST_IPS.geminiFallback)
+      .send({ query: "logística para e-commerce" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.verdict).toMatch(/^(VÁLIDO|INVÁLIDO)$/);
+
+    // 3 fetch calls: rewriter + Gemini (fail) + Claude (success)
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+
+    // Verify the 3rd call used Claude as fallback
+    const [, fallbackOptions] = global.fetch.mock.calls[2];
+    const fallbackBody = JSON.parse(fallbackOptions.body);
+    expect(fallbackBody.model).toBe("anthropic/claude-sonnet-4.6");
   });
 });

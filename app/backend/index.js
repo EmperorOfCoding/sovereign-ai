@@ -78,6 +78,7 @@ if (require.main === module) {
     console.log(`║  Log Level     : ${String(process.env.LOG_LEVEL || "info").padEnd(31)}║`);
     console.log(`║  Rate limit    : ${String(`${process.env.RATE_LIMIT_MAX || 5} req / ${process.env.RATE_LIMIT_WINDOW_HOURS || 24}h`).padEnd(31)}║`);
     console.log(`║  API Key set   : ${String(process.env.OPENROUTER_API_KEY ? "✅ Yes" : "❌ No").padEnd(31)}║`);
+    console.log(`║  Tavily Key    : ${String(process.env.TAVILY_API_KEY ? "✅ Yes" : "❌ No (degraded)").padEnd(31)}║`);
     console.log("╠══════════════════════════════════════════════════╣");
     allowedOrigins.forEach((o, i) => {
       const label = i === 0 ? "CORS Origins  " : "              ";

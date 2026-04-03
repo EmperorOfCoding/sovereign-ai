@@ -4,6 +4,7 @@ import MouseGlow from '../components/MouseGlow';
 import Hero from '../components/Hero';
 import ValidationArchitecture from '../components/ValidationArchitecture';
 import CompetitiveAdvantage from '../components/CompetitiveAdvantage';
+import WhySovereignAI from '../components/WhySovereignAI';
 import PainSignals from '../components/PainSignals';
 import Verdict from '../components/Verdict';
 import Roadmap from '../components/Roadmap';
@@ -19,6 +20,7 @@ export default function Home() {
         <Hero />
         <ValidationArchitecture />
         <CompetitiveAdvantage />
+        <WhySovereignAI />
         <PainSignals />
         <Verdict 
           score={82}

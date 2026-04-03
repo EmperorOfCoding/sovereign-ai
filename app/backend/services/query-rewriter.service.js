@@ -4,7 +4,7 @@
  */
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const REWRITER_MODEL = "qwen/qwen3.6-plus:free";
+const REWRITER_MODEL = "google/gemini-2.0-flash-lite-001";
 const REWRITER_TIMEOUT_MS = 15000; // 15 seconds (should be fast)
 
 const REWRITER_SYSTEM_PROMPT = `Você é um especialista em busca de inteligência de mercado.
