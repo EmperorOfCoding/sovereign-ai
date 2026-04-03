@@ -60,24 +60,19 @@ export default function Hero() {
           viewport={{ once: true }}
           className="text-5xl md:text-7xl font-bold tracking-tight mb-6 uppercase leading-none"
         >
-          {"Valide sua próxima ".split('').map((char, index) => (
+          {"Transforme sua".split('').map((char, index) => (
             <motion.span key={`t1-${index}`} className="inline-block" variants={{ hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0 } }}>
               {char === ' ' ? '\u00A0' : char}
             </motion.span>
           ))}
           <br />
           <span className="text-primary italic inline-block">
-            {"grande ideia".split('').map((char, index) => (
+            {"ideia em solução".split('').map((char, index) => (
               <motion.span key={`t2-${index}`} className="inline-block" variants={{ hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0 } }}>
                 {char === ' ' ? '\u00A0' : char}
               </motion.span>
             ))}
           </span>
-          {" com IA".split('').map((char, index) => (
-            <motion.span key={`t3-${index}`} className="inline-block" variants={{ hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0 } }}>
-              {char === ' ' ? '\u00A0' : char}
-            </motion.span>
-          ))}
         </motion.h1>
 
         <motion.p
